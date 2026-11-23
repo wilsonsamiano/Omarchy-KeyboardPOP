@@ -1,0 +1,277 @@
+#!/usr/bin/env python3
+"""Face unlock with the Surface Go 2's IR camera.
+
+    faceunlock enroll [user]   look at the camera; saves your face (run as root)
+    faceunlock verify [user]   exit 0 when the face matches within a few seconds
+    faceunlock test            show what the camera sees, for checking the light
+    faceunlock remove [user]   forget the enrolled face (run as root)
+
+The IR camera (an OV7251 behind Intel's IPU3) gives raw 10-bit grayscale
+frames, lit by an IR light on the TPS68470 power chip that the
+tps68470-irled module exposes as an LED. Faces are found with OpenCV's YuNet
+and compared with SFace; an IR image also means a photo on a phone screen
+doesn't work, since screens give off no infrared.
+
+Enrolled faces live root-owned in /etc/keyboardpop/face, so a program running
+as the user can't swap in someone else's. `verify` is what the
+keyboardpop-face PAM service runs (pam_exec), and it reads the user from
+PAM_USER there.
+"""
+
+import glob
+import os
+import pwd
+import subprocess
+import sys
+import time
+
+import cv2
+import numpy as np
+
+MODELS = os.environ.get("FACEUNLOCK_MODELS", "/usr/share/keyboardpop/face")
+FACES = "/etc/keyboardpop/face"
+# PAM runs this with almost no environment, so tools are called by path.
+MEDIA_CTL = "/usr/bin/media-ctl"
+V4L2_CTL = "/usr/bin/v4l2-ctl"
+LED = "/sys/class/leds/tps68470::ir_illuminator/brightness"
+# The light's 0-7 level. Low is plenty at arm's length and keeps it cool.
+LED_LEVEL = 3
+
+WIDTH, HEIGHT = 640, 480
+BYTES_PER_LINE = 832  # IPU3 packs 25 pixels into every 32 bytes
+FRAME = BYTES_PER_LINE * HEIGHT
+
+# SFace cosine similarity; OpenCV suggests 0.363 for visible light. IR faces
+# of the same person score lower against each other, and much lower against
+# anyone else, so this stays a little above.
+MATCH = 0.42
+MATCHES_NEEDED = 2
+TIMEOUT = 5.0
+ENROLL_SAMPLES = 8
+
+
+def log(*args):
+    if os.environ.get("FACEUNLOCK_DEBUG"):
+        print("faceunlock:", *args, file=sys.stderr, flush=True)
+
+
+# ---- Camera -----------------------------------------------------------------
+
+def run(*args):
+    subprocess.run(args, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def media_device():
+    """The media device, sensor entity name, and sensor subdevice node."""
+    for dev in sorted(glob.glob("/dev/media*")):
+        out = subprocess.run([MEDIA_CTL, "-d", dev, "-p"], capture_output=True, text=True).stdout
+        lines = out.splitlines()
+        for i, line in enumerate(lines):
+            if line.startswith("- entity") and "ov7251" in line:
+                sensor = line.split(":", 1)[1].split("(")[0].strip()
+                for following in lines[i + 1:i + 4]:
+                    if "device node name" in following:
+                        return dev, sensor, following.split()[-1]
+    raise RuntimeError("no IR camera (ov7251) found")
+
+
+class IRCamera:
+    """Raw frames from the IR sensor through the IPU3 CIO2 receiver."""
+
+    def __init__(self):
+        self.media, self.sensor, self.subdev = media_device()
+        csi = "ipu3-csi2 2"
+        run(MEDIA_CTL, "-d", self.media, "-l", f'"{self.sensor}":0 -> "{csi}":0[1]')
+        run(MEDIA_CTL, "-d", self.media, "-V", f'"{csi}":0 [fmt:Y10_1X10/{WIDTH}x{HEIGHT}]')
+        run(MEDIA_CTL, "-d", self.media, "-V", f'"{csi}":1 [fmt:Y10_1X10/{WIDTH}x{HEIGHT}]')
+        self.video = subprocess.run([MEDIA_CTL, "-d", self.media, "-e", "ipu3-cio2 2"],
+                                    capture_output=True, text=True, check=True).stdout.strip()
+        run(V4L2_CTL, "-d", self.video, f"--set-fmt-video=width={WIDTH},height={HEIGHT},pixelformat=ip3y")
+        self.exposure, self.gain = 800, 200
+        self.apply()
+
+    def apply(self):
+        run(V4L2_CTL, "-d", self.subdev, "-c", f"exposure={self.exposure},gain={self.gain}")
+
+    def frames(self, count):
+        out = subprocess.run([V4L2_CTL, "-d", self.video, "--stream-mmap", f"--stream-count={count}",
+                              "--stream-to=-"], capture_output=True, timeout=10).stdout
+        return [unpack(out[i * FRAME:(i + 1) * FRAME]) for i in range(len(out) // FRAME)]
+
+    def adjust(self, image):
+        """Nudges exposure and gain toward a mid-grey face."""
+        mean = float(image.mean())
+        if mean < 60 and (self.exposure < 1600 or self.gain < 1023):
+            if self.exposure < 1600:
+                self.exposure = min(1600, int(self.exposure * 1.6))
+            else:
+                self.gain = min(1023, int(self.gain * 1.6))
+            self.apply()
+        elif mean > 170:
+            if self.gain > 16:
+                self.gain = max(16, int(self.gain / 1.6))
+            else:
+                self.exposure = max(50, int(self.exposure / 1.6))
+            self.apply()
+
+    def close(self):
+        subprocess.run([MEDIA_CTL, "-d", self.media, "-l", f'"{self.sensor}":0 -> "ipu3-csi2 2":0[0]'],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def unpack(raw):
+    """IPU3 packed 10-bit grayscale to an 8-bit image."""
+    rows = np.frombuffer(raw, np.uint8).reshape(HEIGHT, BYTES_PER_LINE)
+    blocks = rows.reshape(HEIGHT, BYTES_PER_LINE // 32, 32)
+    # Each 32-byte block holds 25 little-endian 10-bit pixels.
+    bits = np.unpackbits(blocks, axis=2, bitorder="little")[:, :, :250]
+    pixels = (bits.reshape(HEIGHT, -1, 25, 10) * (1 << np.arange(10, dtype=np.uint16))).sum(axis=3)
+    image = pixels.reshape(HEIGHT, -1)[:, :WIDTH]
+    return np.clip(image >> 2, 0, 255).astype(np.uint8)
+
+
+class Light:
+    def __enter__(self):
+        self.set(LED_LEVEL)
+        return self
+
+    def __exit__(self, *exc):
+        self.set(0)
+
+    @staticmethod
+    def set(level):
+        try:
+            with open(LED, "w") as f:
+                f.write(str(level))
+        except OSError as e:
+            log("IR light:", e)
+
+
+# ---- Faces ------------------------------------------------------------------
+
+class Faces:
+    def __init__(self):
+        self.detector = cv2.FaceDetectorYN.create(f"{MODELS}/yunet.onnx", "", (WIDTH, HEIGHT), 0.7, 0.3, 1)
+        self.recognizer = cv2.FaceRecognizerSF.create(f"{MODELS}/sface.onnx", "")
+
+    def feature(self, image):
+        """The face's feature vector, or None when there's no clear face."""
+        colour = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+        _, faces = self.detector.detect(colour)
+        if faces is None or len(faces) == 0:
+            return None
+        face = max(faces, key=lambda f: f[2] * f[3])
+        if face[2] < 80:  # too far away to trust
+            return None
+        crop = self.recognizer.alignCrop(colour, face)
+        return self.recognizer.feature(crop)
+
+    def similarity(self, a, b):
+        return float(self.recognizer.match(a, b, cv2.FaceRecognizerSF_FR_COSINE))
+
+
+def face_file(user):
+    return os.path.join(FACES, f"{user}.npy")
+
+
+def target_user(args):
+    if args:
+        return args[0]
+    if os.environ.get("PAM_USER"):
+        return os.environ["PAM_USER"]
+    if os.geteuid() == 0 and os.environ.get("PKEXEC_UID"):
+        return pwd.getpwuid(int(os.environ["PKEXEC_UID"])).pw_name
+    return pwd.getpwuid(os.getuid()).pw_name
+
+
+# ---- Commands ---------------------------------------------------------------
+
+def enroll(user):
+    if os.geteuid() != 0:
+        sys.exit("faceunlock enroll: run as root (pkexec faceunlock enroll)")
+    faces, camera = Faces(), IRCamera()
+    samples = []
+    print("Look at the camera…", flush=True)
+    try:
+        with Light():
+            deadline = time.monotonic() + 20
+            while len(samples) < ENROLL_SAMPLES and time.monotonic() < deadline:
+                for image in camera.frames(3):
+                    camera.adjust(image)
+                    feature = faces.feature(image)
+                    if feature is not None:
+                        samples.append(feature)
+                        print(f"  {len(samples)}/{ENROLL_SAMPLES}", flush=True)
+    finally:
+        camera.close()
+    if len(samples) < ENROLL_SAMPLES:
+        sys.exit("faceunlock enroll: couldn't see a face clearly; try again facing the camera")
+    os.makedirs(FACES, mode=0o755, exist_ok=True)
+    np.save(face_file(user), np.vstack(samples))
+    os.chmod(face_file(user), 0o644)
+    print(f"Enrolled {user}.")
+
+
+def verify(user):
+    path = face_file(user)
+    if not os.path.exists(path):
+        log("no face enrolled for", user)
+        return 2
+    enrolled = np.load(path)
+    faces, camera = Faces(), IRCamera()
+    streak = 0
+    try:
+        with Light():
+            deadline = time.monotonic() + TIMEOUT
+            while time.monotonic() < deadline:
+                for image in camera.frames(2):
+                    camera.adjust(image)
+                    feature = faces.feature(image)
+                    if feature is None:
+                        streak = 0
+                        continue
+                    best = max(faces.similarity(feature, e[None, :]) for e in enrolled)
+                    log(f"similarity {best:.3f}")
+                    streak = streak + 1 if best >= MATCH else 0
+                    if streak >= MATCHES_NEEDED:
+                        return 0
+    finally:
+        camera.close()
+    return 1
+
+
+def test():
+    camera = IRCamera()
+    try:
+        with Light():
+            for _ in range(4):
+                for image in camera.frames(2):
+                    camera.adjust(image)
+            image = camera.frames(1)[0]
+    finally:
+        camera.close()
+    out = os.path.abspath("faceunlock-test.png")
+    cv2.imwrite(out, image)
+    faces = Faces()
+    print(f"mean brightness {image.mean():.0f}, face {'found' if faces.feature(image) is not None else 'not found'}; saved {out}")
+
+
+def main():
+    command, args = (sys.argv[1] if len(sys.argv) > 1 else ""), sys.argv[2:]
+    if command == "enroll":
+        enroll(target_user(args))
+    elif command == "verify":
+        sys.exit(verify(target_user(args)))
+    elif command == "test":
+        test()
+    elif command == "remove":
+        user = target_user(args)
+        if os.path.exists(face_file(user)):
+            os.remove(face_file(user))
+        print(f"Removed {user}'s face.")
+    else:
+        sys.exit(__doc__)
+
+
+if __name__ == "__main__":
+    main()

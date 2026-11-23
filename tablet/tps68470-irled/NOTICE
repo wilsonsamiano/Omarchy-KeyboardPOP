@@ -1,0 +1,4 @@
+tps68470-irled.c is from https://github.com/chikara-linux/surface-go2-camera
+(MIT License, Copyright (c) 2026 chikara-linux), with two header includes
+added. It drives the Surface Go 2's IR light, which sits on the TPS68470
+power chip's flash output, as the LED tps68470::ir_illuminator (0-7).

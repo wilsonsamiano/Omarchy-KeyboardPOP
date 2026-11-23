@@ -1,0 +1,4 @@
+# Lets the wheel group switch the IR light for face unlock; the lock screen
+# runs as the user. Only that one file opens up, not the power chip.
+ACTION=="add", SUBSYSTEM=="leds", KERNEL=="tps68470::ir_illuminator", \
+  RUN+="/bin/chgrp wheel /sys%p/brightness", RUN+="/bin/chmod g+w /sys%p/brightness"

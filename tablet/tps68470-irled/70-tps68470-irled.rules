@@ -1,0 +1,3 @@
+# Loads the IR light driver once the TPS68470 power chip's driver is bound;
+# loading it earlier fails because the chip isn't there yet.
+ACTION=="bind", SUBSYSTEM=="i2c", DRIVER=="int3472-tps68470", RUN+="/sbin/modprobe tps68470-irled"

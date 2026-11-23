@@ -1,0 +1,20 @@
+# The Surface Go 2's IR light, for face unlock: a small kernel module built
+# for each kernel by DKMS. Source: tablet/tps68470-irled (see its NOTICE).
+pkgname=tps68470-irled-dkms
+pkgver=1.0
+pkgrel=1
+pkgdesc='IR light driver for the Surface Go 2 (TPS68470 flash output as an LED)'
+arch=('any')
+license=('MIT')
+depends=('dkms')
+source=()
+sha256sums=()
+
+package() {
+  local src="$startdir/../../tablet/tps68470-irled"
+  install -Dm644 "$src/tps68470-irled.c" "$pkgdir/usr/src/tps68470-irled-$pkgver/tps68470-irled.c"
+  install -Dm644 "$src/Makefile" "$pkgdir/usr/src/tps68470-irled-$pkgver/Makefile"
+  install -Dm644 "$src/dkms.conf" "$pkgdir/usr/src/tps68470-irled-$pkgver/dkms.conf"
+  install -Dm644 "$src/70-tps68470-irled.rules" "$pkgdir/usr/lib/udev/rules.d/70-tps68470-irled.rules"
+  install -Dm644 "$src/NOTICE" "$pkgdir/usr/share/licenses/$pkgname/NOTICE"
+}

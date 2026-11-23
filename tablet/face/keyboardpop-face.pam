@@ -1,0 +1,3 @@
+# Face unlock for the Omarchy lock screen: faceunlock looks for the enrolled
+# face with the IR camera for a few seconds (see /usr/bin/faceunlock).
+auth required pam_exec.so quiet /usr/bin/faceunlock verify

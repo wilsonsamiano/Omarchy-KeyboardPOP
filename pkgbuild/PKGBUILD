@@ -1,6 +1,6 @@
 pkgname=keyboardpop
 pkgver=0.1.0
-pkgrel=15
+pkgrel=16
 pkgdesc='Touch keyboard for Omarchy with key popups, swipe typing, and suggestions'
 arch=('x86_64' 'aarch64')
 license=('MIT')
@@ -10,8 +10,13 @@ conflicts=('presspop')
 replaces=('presspop')
 optdepends=('iio-sensor-proxy: autorotate, for turning the screen with the tablet'
             'jq: autorotate'
-            'python: touchswipe, for four-finger desktop swipes')
+            'python: touchswipe, for four-finger desktop swipes'
+            'python-opencv: faceunlock, face unlock with the IR camera'
+            'python-numpy: faceunlock'
+            'v4l-utils: faceunlock'
+            'tps68470-irled-dkms: faceunlock, the IR light')
 makedepends=('gcc' 'make')
+backup=('etc/pam.d/keyboardpop-face')
 source=()
 sha256sums=()
 
@@ -28,5 +33,10 @@ package() {
   install -Dm644 "$startdir/keyboardpop.desktop" "$pkgdir/usr/share/applications/keyboardpop.desktop"
   install -Dm755 tablet/autorotate "$pkgdir/usr/bin/autorotate"
   install -Dm755 tablet/touchswipe "$pkgdir/usr/bin/touchswipe"
+  install -Dm755 tablet/faceunlock "$pkgdir/usr/bin/faceunlock"
+  install -Dm644 tablet/face/yunet.onnx "$pkgdir/usr/share/keyboardpop/face/yunet.onnx"
+  install -Dm644 tablet/face/sface.onnx "$pkgdir/usr/share/keyboardpop/face/sface.onnx"
+  install -Dm644 tablet/face/keyboardpop-face.pam "$pkgdir/etc/pam.d/keyboardpop-face"
+  install -Dm644 tablet/face/70-keyboardpop-irled.rules "$pkgdir/usr/lib/udev/rules.d/70-keyboardpop-irled.rules"
   install -Dm644 "$startdir/70-keyboardpop-touchscreen.rules" "$pkgdir/usr/lib/udev/rules.d/70-keyboardpop-touchscreen.rules"
 }

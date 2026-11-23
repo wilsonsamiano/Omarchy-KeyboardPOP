@@ -2,3 +2,5 @@
 /pkgbuild/pkg/
 /pkgbuild/src/
 *.pkg.tar.*
+/pkgbuild/irled/pkg/
+/pkgbuild/irled/src/

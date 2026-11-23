@@ -180,6 +180,26 @@ while the dots are showing, and touches pass through it. Install it like the
 app switcher (`omarchy plugin enable touch.gesture-feedback`); the
 `desktop_step` function above triggers it.
 
+### Face unlock (Surface Go 2)
+
+`faceunlock` unlocks with your face using the IR camera, like Windows
+Hello. It finds the face with OpenCV's YuNet and compares it with SFace, on
+infrared frames, so a photo on a screen won't pass. It needs:
+
+- the IR light driver, `tps68470-irled-dkms` (`pkgbuild/irled`; the module
+  source is in `tablet/tps68470-irled`, from
+  [surface-go2-camera](https://github.com/chikara-linux/surface-go2-camera)),
+- `python-opencv`, `python-numpy`, and `v4l-utils`.
+
+```sh
+pkexec faceunlock enroll   # look at the camera for a few seconds
+faceunlock test            # checks the light and saves what the camera sees
+```
+
+Your face is stored root-owned in `/etc/keyboardpop/face`. The
+`keyboardpop-face` PAM service runs `faceunlock verify`, which a lock screen
+can use alongside the password; it gives up after about five seconds.
+
 ## Commands
 
 | Command | |
