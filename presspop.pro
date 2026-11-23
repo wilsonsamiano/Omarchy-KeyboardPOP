@@ -15,6 +15,7 @@ HEADERS += \
     src/swipe.h \
     src/textsink.h \
     src/theme.h \
+    src/touchwatcher.h \
     src/translator.h \
     src/waylandinput.h
 
@@ -26,6 +27,7 @@ SOURCES += \
     src/personal.cpp \
     src/swipe.cpp \
     src/theme.cpp \
+    src/touchwatcher.cpp \
     src/translator.cpp \
     src/waylandinput.cpp
 

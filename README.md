@@ -72,6 +72,13 @@ Without fcitx5, start PressPop with the session, hidden, in
 o.launch_on_start("presspop hide")
 ```
 
+It only pops up when you tap a field with your finger; clicking one with
+the mouse or tabbing to it leaves it hidden. To tell the two apart PressPop
+reads the touchscreen, which the package's udev rule
+(`/usr/lib/udev/rules.d/70-presspop-touchscreen.rules`) lets the logged-in
+user do for touchscreens only. Without that access it pops up on every
+focused field.
+
 ## Commands
 
 | Command | |

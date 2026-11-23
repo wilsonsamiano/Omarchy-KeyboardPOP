@@ -1,6 +1,6 @@
 pkgname=presspop
 pkgver=0.1.0
-pkgrel=3
+pkgrel=4
 pkgdesc='Touch keyboard for Omarchy with key popups, swipe typing, and suggestions'
 arch=('x86_64' 'aarch64')
 license=('MIT')
@@ -20,4 +20,5 @@ package() {
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
   install -Dm644 "$startdir/presspop.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/presspop.svg"
   install -Dm644 "$startdir/presspop.desktop" "$pkgdir/usr/share/applications/presspop.desktop"
+  install -Dm644 "$startdir/70-presspop-touchscreen.rules" "$pkgdir/usr/lib/udev/rules.d/70-presspop-touchscreen.rules"
 }

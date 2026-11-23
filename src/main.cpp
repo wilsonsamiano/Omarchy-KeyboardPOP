@@ -1,5 +1,6 @@
 // PressPop — a touch keyboard for Omarchy with key popups and swipe typing.
 
+#include <QElapsedTimer>
 #include <QFile>
 #include <QGuiApplication>
 #include <QIcon>
@@ -21,6 +22,7 @@
 #include "keyboardview.h"
 #include "personal.h"
 #include "theme.h"
+#include "touchwatcher.h"
 #include "translator.h"
 #include "waylandinput.h"
 
@@ -207,12 +209,40 @@ int main(int argc, char *argv[]) {
         }
     });
 
-    // As the input method, the keyboard comes and goes with text fields.
-    QObject::connect(&input, &WaylandInput::fieldActivated, [&] {
+    // As the input method, the keyboard comes and goes with text fields, but
+    // only when the field was tapped with a finger: clicking one with the
+    // mouse leaves it hidden. Without access to the touchscreen there is no
+    // telling the two apart, so any focused field brings it up.
+    TouchWatcher touch;
+    QElapsedTimer activatedAt;
+    constexpr qint64 TapWindowMs = 700;
+    auto popUp = [&] {
+        if (window->isVisible())
+            return;
         backend.reset();
         window->show();
+    };
+    QObject::connect(&input, &WaylandInput::fieldActivated, [&] {
+        activatedAt.start();
+        touch.rescanIfNeeded();
+        if (!touch.available() || touch.touchedWithin(TapWindowMs))
+            popUp();
     });
-    QObject::connect(&input, &WaylandInput::fieldDeactivated, hide);
+    QObject::connect(&input, &WaylandInput::fieldDeactivated, [&] {
+        activatedAt.invalidate();
+        hide();
+    });
+    // Tapping a field that already has focus (say, one clicked earlier) moves
+    // its cursor, which arrives as a context change.
+    QObject::connect(&input, &WaylandInput::contextChanged, [&] {
+        if (input.fieldActive() && touch.touchedWithin(TapWindowMs))
+            popUp();
+    });
+    // The touch can also be read after the field reports focus.
+    QObject::connect(&touch, &TouchWatcher::touched, [&] {
+        if (input.fieldActive() && activatedAt.isValid() && activatedAt.elapsed() <= TapWindowMs)
+            popUp();
+    });
     QObject::connect(&input, &WaylandInput::contextChanged, &backend, &Backend::contextChanged);
     QObject::connect(&app, &QCoreApplication::aboutToQuit, &personal, &Personal::flush);
 
