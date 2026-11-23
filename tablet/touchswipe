@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
-"""Four-finger swipes on the touchscreen switch desktops, like an iPad,
-and a touch dismisses the Omarchy screensaver.
+"""iPad-style touchscreen gestures for Omarchy.
+
+- A quick one-finger swipe left or right, anywhere except on the on-screen
+  keyboard, switches desktops (left for the next one). So does a
+  four-finger swipe.
+- A swipe up from the bottom edge opens the Omarchy menu (Super + Space).
+- A touch dismisses the Omarchy screensaver.
 
 Swipe four fingers left for the next desktop, right for the previous one.
 Hyprland only does gestures on touchpads, so this reads the touchscreen
@@ -12,6 +17,7 @@ screen's left. Started hidden at login from ~/.config/hypr/autostart.lua.
 
 import fcntl
 import glob
+import json
 import os
 import signal
 import struct
@@ -28,6 +34,13 @@ FINGERS = 4
 # A swipe crosses at least this much of the screen, mostly sideways.
 MIN_TRAVEL = 0.15
 SIDEWAYS = 1.5
+# A one-finger desktop swipe is a quick flick, so slow drags (selecting
+# text, moving a slider) don't count.
+FLICK_TRAVEL = 0.2
+FLICK_SECONDS = 0.5
+# An edge swipe starts this close to the edge and travels this far in.
+EDGE = 0.04
+EDGE_TRAVEL = 0.12
 
 STATE = os.path.join(os.environ.get("XDG_STATE_HOME", os.path.expanduser("~/.local/state")), "autorotate", "transform")
 
@@ -59,9 +72,53 @@ def rotation():
         return 0
 
 
+def to_screen(x, y):
+    """A panel position (0-1 on each axis) as a position on the rotated screen."""
+    return {0: (x, y), 1: (y, 1 - x), 2: (1 - x, 1 - y), 3: (1 - y, x)}[rotation() % 4]
+
+
 def sideways(dx, dy):
     """The swipe's sideways travel on screen, from panel travel."""
     return {0: dx, 1: dy, 2: -dx, 3: -dy}[rotation() % 4], {0: dy, 1: dx, 2: dy, 3: dx}[rotation() % 4]
+
+
+def hyprctl_json(*args):
+    try:
+        return json.loads(subprocess.run(["hyprctl", *args, "-j"], capture_output=True, text=True).stdout)
+    except (ValueError, OSError):
+        return None
+
+
+def on_keyboard(point):
+    """Whether a screen position (0-1) is on the on-screen keyboard."""
+    monitors = hyprctl_json("monitors") or []
+    layers = hyprctl_json("layers") or {}
+    for monitor in monitors:
+        scale = monitor.get("scale") or 1
+        width, height = monitor["width"] / scale, monitor["height"] / scale
+        if monitor.get("transform", 0) % 2:
+            width, height = height, width
+        for level in layers.get(monitor["name"], {}).get("levels", {}).values():
+            for layer in level:
+                if layer.get("namespace") == "keyboardpop":
+                    x, y = point[0] * width, point[1] * height
+                    if layer["x"] <= x <= layer["x"] + layer["w"] and layer["y"] <= y <= layer["y"] + layer["h"]:
+                        return True
+    return False
+
+
+def open_menu():
+    subprocess.run(["omarchy-menu", "summon", "root"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def one_finger(start, end, seconds):
+    """Acts on a one-finger swipe from `start` to `end` (screen, 0-1)."""
+    dx, dy = end[0] - start[0], end[1] - start[1]
+    if start[1] >= 1 - EDGE and -dy >= EDGE_TRAVEL and -dy >= SIDEWAYS * abs(dx):
+        open_menu()
+    elif seconds <= FLICK_SECONDS and abs(dx) >= FLICK_TRAVEL and abs(dx) >= SIDEWAYS * abs(dy):
+        if not on_keyboard(start):
+            step(1 if dx < 0 else -1)
 
 
 def dismiss_screensaver():
@@ -98,6 +155,9 @@ def watch(path):
         slot = 0
         touches = {}  # slot -> [x, y]
         start = last = None
+        # The one-finger gesture: where and when it started, where it is.
+        single = single_end = None
+        single_since = 0.0
         while True:
             data = os.read(fd, EVENT.size * 64)
             if not data:
@@ -128,6 +188,21 @@ def watch(path):
                     elif start is not None and len(placed) >= FINGERS - 1:
                         # Fingers lift one at a time; follow while most are down.
                         last = centre
+                    # One finger alone from start to finish.
+                    if len(touches) == 1 and len(placed) == 1:
+                        point = to_screen(*placed[0])
+                        if single is None and single_since == 0.0:
+                            single, single_since = point, time.monotonic()
+                        if single is not None:
+                            single_end = point
+                    elif len(touches) > 1:
+                        single = None
+                        single_since = -1.0
+                    if not touches:
+                        if single is not None and single_end is not None:
+                            one_finger(single, single_end, time.monotonic() - single_since)
+                        single = single_end = None
+                        single_since = 0.0
                     if start is not None and not touches:
                         across, along = sideways(last[0] - start[0], last[1] - start[1])
                         if abs(across) >= MIN_TRAVEL and abs(across) >= SIDEWAYS * abs(along):

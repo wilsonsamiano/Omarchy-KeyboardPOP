@@ -128,10 +128,15 @@ The `config.reloaded` hook puts the rotation back after a Hyprland reload,
 which would otherwise reset the screen to upright. The lock state is
 written to `~/.local/state/autorotate/status` for a bar widget to show.
 
-**`touchswipe`** switches desktops with four-finger swipes on the
-touchscreen: left for the next desktop, right for the previous one. A touch
-also dismisses the Omarchy screensaver, which otherwise only closes on a
-keypress. Hyprland
+**`touchswipe`** adds iPad-style touchscreen gestures:
+
+- A quick one-finger swipe left or right switches desktops (left for the
+  next one). It has to be a flick, so slow drags like selecting text don't
+  count, and swipes on the on-screen keyboard are left alone.
+- Four fingers swiped left or right do the same.
+- A swipe up from the bottom edge opens the Omarchy menu (Super + Space).
+- A touch dismisses the Omarchy screensaver, which otherwise only closes on
+  a keypress. Hyprland
 only does gestures on touchpads, so it reads the touchscreen (through the
 same udev rule as the keyboard) and follows `autorotate`'s rotation. It calls
 a `desktop_step` function that goes in `~/.config/hypr/input.lua`, along with
