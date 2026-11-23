@@ -2,7 +2,8 @@
 """iPad-style touchscreen gestures for Omarchy.
 
 - A quick one-finger swipe left or right, anywhere except on the on-screen
-  keyboard, switches desktops (left for the next one). So does a
+  keyboard, switches desktops: left to right goes to the next desktop (the
+  one to the right), right to left to the previous one. So does a
   four-finger swipe.
 - A swipe up from the bottom edge opens the Omarchy menu (Super + Space).
 - A touch dismisses the Omarchy screensaver.
@@ -74,12 +75,14 @@ def rotation():
 
 def to_screen(x, y):
     """A panel position (0-1 on each axis) as a position on the rotated screen."""
-    return {0: (x, y), 1: (y, 1 - x), 2: (1 - x, 1 - y), 3: (1 - y, x)}[rotation() % 4]
+    # Measured on a Surface Go 2: held with transform 1, a left-to-right
+    # swipe runs down the panel's y axis.
+    return {0: (x, y), 1: (1 - y, x), 2: (1 - x, 1 - y), 3: (y, 1 - x)}[rotation() % 4]
 
 
 def sideways(dx, dy):
     """The swipe's sideways travel on screen, from panel travel."""
-    return {0: dx, 1: dy, 2: -dx, 3: -dy}[rotation() % 4], {0: dy, 1: dx, 2: dy, 3: dx}[rotation() % 4]
+    return {0: dx, 1: -dy, 2: -dx, 3: dy}[rotation() % 4], {0: dy, 1: dx, 2: dy, 3: dx}[rotation() % 4]
 
 
 def hyprctl_json(*args):
@@ -118,7 +121,7 @@ def one_finger(start, end, seconds):
         open_menu()
     elif seconds <= FLICK_SECONDS and abs(dx) >= FLICK_TRAVEL and abs(dx) >= SIDEWAYS * abs(dy):
         if not on_keyboard(start):
-            step(1 if dx < 0 else -1)
+            step(1 if dx > 0 else -1)
 
 
 def dismiss_screensaver():
@@ -206,8 +209,8 @@ def watch(path):
                     if start is not None and not touches:
                         across, along = sideways(last[0] - start[0], last[1] - start[1])
                         if abs(across) >= MIN_TRAVEL and abs(across) >= SIDEWAYS * abs(along):
-                            # Fingers moving left bring the next desktop in.
-                            step(1 if across < 0 else -1)
+                            # Left to right goes to the next desktop.
+                            step(1 if across > 0 else -1)
                         start = last = None
     finally:
         os.close(fd)
