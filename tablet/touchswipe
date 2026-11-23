@@ -35,10 +35,11 @@ FINGERS = 4
 # A swipe crosses at least this much of the screen, mostly sideways.
 MIN_TRAVEL = 0.15
 SIDEWAYS = 1.5
-# A one-finger desktop swipe is a quick flick, so slow drags (selecting
-# text, moving a slider) don't count.
-FLICK_TRAVEL = 0.2
-FLICK_SECONDS = 0.5
+# A one-finger desktop swipe is a long, quick swipe: shorter ones are left
+# to apps (a browser's back swipe), and slow drags (selecting text, moving a
+# slider) don't count.
+FLICK_TRAVEL = 0.45
+FLICK_SECONDS = 0.7
 # An edge swipe starts this close to the edge and travels this far in.
 EDGE = 0.04
 EDGE_TRAVEL = 0.12

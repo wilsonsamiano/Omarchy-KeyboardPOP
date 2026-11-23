@@ -132,8 +132,10 @@ written to `~/.local/state/autorotate/status` for a bar widget to show.
 
 - A quick one-finger swipe switches desktops the iPad way: the desktops
   follow your finger, so right to left brings in the next desktop and left
-  to right goes back. It has to be a flick, so slow drags like selecting text don't
-  count, and swipes on the on-screen keyboard are left alone.
+  to right goes back. It has to cross nearly half the screen, so shorter
+  swipes, like a browser's back swipe, still go to the app. It also has to
+  be quick, so slow drags like selecting text don't count, and swipes on
+  the on-screen keyboard are left alone.
 - Four fingers swiped left or right do the same.
 - A swipe up from the bottom edge opens the Omarchy menu (Super + Space).
 - A touch dismisses the Omarchy screensaver, which otherwise only closes on
