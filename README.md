@@ -138,6 +138,7 @@ written to `~/.local/state/autorotate/status` for a bar widget to show.
   the on-screen keyboard are left alone.
 - Four fingers swiped left or right do the same.
 - A swipe up from the bottom edge opens the Omarchy menu (Super + Space).
+  Swiping up and holding still opens the app switcher instead (below).
 - A touch dismisses the Omarchy screensaver, which otherwise only closes on
   a keypress. Hyprland
 only does gestures on touchpads, so it reads the touchscreen (through the
@@ -156,6 +157,19 @@ end
 hl.gesture({ fingers = 4, direction = "left", action = function() desktop_step(1) end })
 hl.gesture({ fingers = 4, direction = "right", action = function() desktop_step(-1) end })
 ```
+
+**App switcher** (`tablet/app-switcher`) is an Omarchy shell plugin with a
+card for each open window, newest first: tap a card to switch to it, swipe
+it up to close the window, or drag it onto a desktop number to move it
+there. Install it with:
+
+```sh
+cp -r tablet/app-switcher ~/.config/omarchy/plugins/
+omarchy plugin enable touch.app-switcher
+```
+
+`omarchy-shell shell summon touch.app-switcher` opens it, which you can
+also bind to a key.
 
 ## Commands
 

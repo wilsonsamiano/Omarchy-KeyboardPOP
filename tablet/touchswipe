@@ -5,7 +5,8 @@
   keyboard, switches desktops the iPad way: the desktops follow your finger,
   so right to left brings in the next desktop and left to right goes back.
   So does a four-finger swipe.
-- A swipe up from the bottom edge opens the Omarchy menu (Super + Space).
+- A swipe up from the bottom edge opens the Omarchy menu (Super + Space);
+  swiping up and holding still opens the app switcher instead.
 - A touch dismisses the Omarchy screensaver.
 
 Swipe four fingers left for the next desktop, right for the previous one.
@@ -20,6 +21,7 @@ import fcntl
 import glob
 import json
 import os
+import select
 import signal
 import struct
 import subprocess
@@ -43,6 +45,10 @@ FLICK_SECONDS = 0.7
 # An edge swipe starts this close to the edge and travels this far in.
 EDGE = 0.04
 EDGE_TRAVEL = 0.12
+# Swiping up from the bottom edge and holding still this long opens the
+# app switcher; "still" is moving less than HOLD_SLOP of the screen.
+HOLD_SECONDS = 0.3
+HOLD_SLOP = 0.02
 
 STATE = os.path.join(os.environ.get("XDG_STATE_HOME", os.path.expanduser("~/.local/state")), "autorotate", "transform")
 
@@ -115,6 +121,11 @@ def open_menu():
     subprocess.run(["omarchy-menu", "summon", "root"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
+def open_switcher():
+    subprocess.run(["omarchy-shell", "shell", "summon", "touch.app-switcher", "{}"],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
 def one_finger(start, end, seconds):
     """Acts on a one-finger swipe from `start` to `end` (screen, 0-1)."""
     dx, dy = end[0] - start[0], end[1] - start[1]
@@ -162,7 +173,20 @@ def watch(path):
         # The one-finger gesture: where and when it started, where it is.
         single = single_end = None
         single_since = 0.0
+        # Where the finger last moved, and when, for spotting a hold.
+        anchor, anchor_since = None, 0.0
+        held = False
         while True:
+            # Wake every so often even without events: a still finger sends
+            # nothing, and a hold is exactly that.
+            ready, _, _ = select.select([fd], [], [], 0.05)
+            now = time.monotonic()
+            if (single is not None and not held and single[1] >= 1 - EDGE and single_end is not None
+                    and single[1] - single_end[1] >= EDGE_TRAVEL and now - anchor_since >= HOLD_SECONDS):
+                held = True
+                open_switcher()
+            if not ready:
+                continue
             data = os.read(fd, EVENT.size * 64)
             if not data:
                 return
@@ -199,14 +223,19 @@ def watch(path):
                             single, single_since = point, time.monotonic()
                         if single is not None:
                             single_end = point
+                            if anchor is None or abs(point[0] - anchor[0]) + abs(point[1] - anchor[1]) > HOLD_SLOP:
+                                anchor, anchor_since = point, time.monotonic()
                     elif len(touches) > 1:
                         single = None
                         single_since = -1.0
                     if not touches:
-                        if single is not None and single_end is not None:
+                        # A hold already opened the switcher; the lift adds nothing.
+                        if single is not None and single_end is not None and not held:
                             one_finger(single, single_end, time.monotonic() - single_since)
                         single = single_end = None
                         single_since = 0.0
+                        anchor, anchor_since = None, 0.0
+                        held = False
                     if start is not None and not touches:
                         across, along = sideways(last[0] - start[0], last[1] - start[1])
                         if abs(across) >= MIN_TRAVEL and abs(across) >= SIDEWAYS * abs(along):
