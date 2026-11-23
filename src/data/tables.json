@@ -1,0 +1,1425 @@
+{
+ "contractions": {
+  "dont": "don't",
+  "cant": "can't",
+  "wont": "won't",
+  "isnt": "isn't",
+  "didnt": "didn't",
+  "doesnt": "doesn't",
+  "couldnt": "couldn't",
+  "shouldnt": "shouldn't",
+  "wouldnt": "wouldn't",
+  "havent": "haven't",
+  "hasnt": "hasn't",
+  "wasnt": "wasn't",
+  "werent": "weren't",
+  "im": "I'm",
+  "ive": "I've",
+  "theyre": "they're",
+  "youre": "you're",
+  "weve": "we've",
+  "hes": "he's",
+  "shes": "she's",
+  "whats": "what's",
+  "thats": "that's",
+  "theres": "there's",
+  "heres": "here's"
+ },
+ "rankCasing": {
+  "pvt": "PVT",
+  "pv2": "PV2",
+  "pfc": "PFC",
+  "spc": "SPC",
+  "cpl": "CPL",
+  "sgt": "SGT",
+  "ssg": "SSG",
+  "sfc": "SFC",
+  "msg": "MSG",
+  "1sg": "1SG",
+  "sgm": "SGM",
+  "csm": "CSM",
+  "wo1": "WO1",
+  "cw2": "CW2",
+  "cw3": "CW3",
+  "cw4": "CW4",
+  "cw5": "CW5",
+  "2lt": "2LT",
+  "1lt": "1LT",
+  "cpt": "CPT",
+  "maj": "MAJ",
+  "ltc": "LTC",
+  "col": "COL",
+  "bg": "BG",
+  "mg": "MG",
+  "ltg": "LTG",
+  "gen": "GEN",
+  "lcpl": "LCpl",
+  "gysgt": "GySgt",
+  "sgtmaj": "SgtMaj",
+  "1stsgt": "1stSgt",
+  "mgysgt": "MGySgt",
+  "2ndlt": "2ndLt",
+  "1stlt": "1stLt",
+  "ltcol": "LtCol",
+  "bgen": "BGen",
+  "majgen": "MajGen",
+  "ltgen": "LtGen",
+  "amn": "Amn",
+  "a1c": "A1C",
+  "sra": "SrA",
+  "ssgt": "SSgt",
+  "tsgt": "TSgt",
+  "msgt": "MSgt",
+  "smsgt": "SMSgt",
+  "cmsgt": "CMSgt",
+  "ens": "ENS",
+  "ltjg": "LTJG",
+  "lcdr": "LCDR",
+  "cpo": "CPO",
+  "scpo": "SCPO",
+  "mcpo": "MCPO",
+  "po1": "PO1",
+  "po2": "PO2",
+  "po3": "PO3",
+  "radm": "RADM",
+  "vadm": "VADM",
+  "adm": "ADM",
+  "cwo2": "CWO2",
+  "cwo3": "CWO3",
+  "cwo4": "CWO4",
+  "cwo5": "CWO5"
+ },
+ "brandCasing": {
+  "apple": "Apple",
+  "samsung": "Samsung",
+  "google": "Google",
+  "microsoft": "Microsoft",
+  "amazon": "Amazon",
+  "iphone": "iPhone",
+  "ipad": "iPad",
+  "ipod": "iPod",
+  "imac": "iMac",
+  "macbook": "MacBook",
+  "ios": "iOS",
+  "macos": "macOS",
+  "ipados": "iPadOS",
+  "android": "Android",
+  "windows": "Windows",
+  "sony": "Sony",
+  "lg": "LG",
+  "huawei": "Huawei",
+  "xiaomi": "Xiaomi",
+  "oppo": "OPPO",
+  "vivo": "Vivo",
+  "oneplus": "OnePlus",
+  "nokia": "Nokia",
+  "motorola": "Motorola",
+  "dell": "Dell",
+  "hp": "HP",
+  "lenovo": "Lenovo",
+  "asus": "ASUS",
+  "acer": "Acer",
+  "msi": "MSI",
+  "intel": "Intel",
+  "amd": "AMD",
+  "nvidia": "NVIDIA",
+  "meta": "Meta",
+  "facebook": "Facebook",
+  "instagram": "Instagram",
+  "whatsapp": "WhatsApp",
+  "youtube": "YouTube",
+  "netflix": "Netflix",
+  "spotify": "Spotify",
+  "tesla": "Tesla",
+  "spacex": "SpaceX",
+  "openai": "OpenAI",
+  "chatgpt": "ChatGPT",
+  "grok": "Grok",
+  "twitter": "Twitter",
+  "tiktok": "TikTok",
+  "snapchat": "Snapchat",
+  "pinterest": "Pinterest",
+  "linkedin": "LinkedIn",
+  "reddit": "Reddit",
+  "twitch": "Twitch",
+  "discord": "Discord",
+  "zoom": "Zoom",
+  "slack": "Slack",
+  "dropbox": "Dropbox",
+  "adobe": "Adobe",
+  "photoshop": "Photoshop",
+  "canon": "Canon",
+  "nikon": "Nikon",
+  "gopro": "GoPro",
+  "fitbit": "Fitbit",
+  "garmin": "Garmin",
+  "roku": "Roku",
+  "hulu": "Hulu",
+  "disney": "Disney",
+  "pixar": "Pixar",
+  "marvel": "Marvel",
+  "nintendo": "Nintendo",
+  "playstation": "PlayStation",
+  "xbox": "Xbox",
+  "sega": "Sega",
+  "atari": "Atari",
+  "steam": "Steam",
+  "roblox": "Roblox",
+  "minecraft": "Minecraft",
+  "fortnite": "Fortnite",
+  "ebay": "eBay",
+  "etsy": "Etsy",
+  "paypal": "PayPal",
+  "venmo": "Venmo",
+  "zelle": "Zelle",
+  "visa": "Visa",
+  "mastercard": "Mastercard",
+  "airbnb": "Airbnb",
+  "uber": "Uber",
+  "lyft": "Lyft",
+  "doordash": "DoorDash",
+  "grubhub": "Grubhub",
+  "yelp": "Yelp",
+  "expedia": "Expedia",
+  "kayak": "Kayak",
+  "priceline": "Priceline",
+  "orbitz": "Orbitz",
+  "travelocity": "Travelocity",
+  "hilton": "Hilton",
+  "marriott": "Marriott",
+  "hyatt": "Hyatt",
+  "wyndham": "Wyndham",
+  "ihg": "IHG",
+  "verizon": "Verizon",
+  "att": "AT&T",
+  "tmobile": "T-Mobile",
+  "t-mobile": "T-Mobile",
+  "sprint": "Sprint",
+  "comcast": "Comcast",
+  "xfinity": "Xfinity",
+  "cox": "Cox",
+  "spectrum": "Spectrum",
+  "directv": "DIRECTV",
+  "hbo": "HBO",
+  "showtime": "Showtime",
+  "cinemax": "Cinemax",
+  "paramount": "Paramount",
+  "peacock": "Peacock",
+  "toyota": "Toyota",
+  "honda": "Honda",
+  "ford": "Ford",
+  "chevrolet": "Chevrolet",
+  "chevy": "Chevy",
+  "bmw": "BMW",
+  "mercedes": "Mercedes",
+  "audi": "Audi",
+  "volkswagen": "Volkswagen",
+  "hyundai": "Hyundai",
+  "kia": "Kia",
+  "nissan": "Nissan",
+  "subaru": "Subaru",
+  "mazda": "Mazda",
+  "lexus": "Lexus",
+  "jeep": "Jeep",
+  "dodge": "Dodge",
+  "ram": "Ram",
+  "gmc": "GMC",
+  "porsche": "Porsche",
+  "ferrari": "Ferrari",
+  "lamborghini": "Lamborghini",
+  "bentley": "Bentley",
+  "maserati": "Maserati",
+  "volvo": "Volvo",
+  "rivian": "Rivian",
+  "lucid": "Lucid",
+  "jaguar": "Jaguar",
+  "mini": "Mini",
+  "fiat": "Fiat",
+  "peugeot": "Peugeot",
+  "renault": "Renault",
+  "mitsubishi": "Mitsubishi",
+  "suzuki": "Suzuki",
+  "infiniti": "Infiniti",
+  "acura": "Acura",
+  "genesis": "Genesis",
+  "cadillac": "Cadillac",
+  "lincoln": "Lincoln",
+  "buick": "Buick",
+  "chrysler": "Chrysler",
+  "rollsroyce": "Rolls-Royce",
+  "rolls-royce": "Rolls-Royce",
+  "cocacola": "Coca-Cola",
+  "coca-cola": "Coca-Cola",
+  "pepsi": "Pepsi",
+  "mcdonalds": "McDonald's",
+  "mcdonald's": "McDonald's",
+  "starbucks": "Starbucks",
+  "wendys": "Wendy's",
+  "wendy's": "Wendy's",
+  "kfc": "KFC",
+  "dominos": "Domino's",
+  "domino's": "Domino's",
+  "subway": "Subway",
+  "nestle": "Nestle",
+  "kelloggs": "Kellogg's",
+  "kellogg's": "Kellogg's",
+  "heinz": "Heinz",
+  "budweiser": "Budweiser",
+  "corona": "Corona",
+  "heineken": "Heineken",
+  "fanta": "Fanta",
+  "sprite": "Sprite",
+  "oreo": "Oreo",
+  "doritos": "Doritos",
+  "cheetos": "Cheetos",
+  "lays": "Lay's",
+  "lay's": "Lay's",
+  "pringles": "Pringles",
+  "snickers": "Snickers",
+  "twix": "Twix",
+  "kitkat": "KitKat",
+  "hershey": "Hershey",
+  "dunkin": "Dunkin",
+  "chickfila": "Chick-fil-A",
+  "chick-fil-a": "Chick-fil-A",
+  "popeyes": "Popeyes",
+  "arbys": "Arby's",
+  "arby's": "Arby's",
+  "sonic": "Sonic",
+  "chipotle": "Chipotle",
+  "panera": "Panera",
+  "applebees": "Applebee's",
+  "applebee's": "Applebee's",
+  "chilis": "Chili's",
+  "chili's": "Chili's",
+  "gatorade": "Gatorade",
+  "powerade": "Powerade",
+  "monster": "Monster",
+  "walmart": "Walmart",
+  "costco": "Costco",
+  "target": "Target",
+  "lowes": "Lowe's",
+  "lowe's": "Lowe's",
+  "ikea": "IKEA",
+  "nike": "Nike",
+  "adidas": "Adidas",
+  "puma": "Puma",
+  "reebok": "Reebok",
+  "levis": "Levi's",
+  "levi's": "Levi's",
+  "gucci": "Gucci",
+  "prada": "Prada",
+  "chanel": "Chanel",
+  "versace": "Versace",
+  "rayban": "Ray-Ban",
+  "ray-ban": "Ray-Ban",
+  "oakley": "Oakley",
+  "sephora": "Sephora",
+  "ulta": "Ulta",
+  "macys": "Macy's",
+  "macy's": "Macy's",
+  "kohls": "Kohl's",
+  "kohl's": "Kohl's",
+  "jcpenney": "JCPenney",
+  "nordstrom": "Nordstrom",
+  "saks": "Saks",
+  "walgreens": "Walgreens",
+  "cvs": "CVS",
+  "gap": "Gap",
+  "abercrombie": "Abercrombie",
+  "hollister": "Hollister",
+  "aeropostale": "Aeropostale",
+  "zara": "Zara",
+  "uniqlo": "Uniqlo",
+  "vans": "Vans",
+  "converse": "Converse",
+  "skechers": "Skechers",
+  "timberland": "Timberland",
+  "patagonia": "Patagonia",
+  "columbia": "Columbia",
+  "tide": "Tide",
+  "dove": "Dove",
+  "colgate": "Colgate",
+  "crest": "Crest",
+  "oralb": "Oral-B",
+  "oral-b": "Oral-B",
+  "gillette": "Gillette",
+  "olay": "Olay",
+  "neutrogena": "Neutrogena",
+  "loreal": "L'Oreal",
+  "maybelline": "Maybelline",
+  "revlon": "Revlon",
+  "covergirl": "CoverGirl",
+  "duracell": "Duracell",
+  "energizer": "Energizer",
+  "kleenex": "Kleenex",
+  "scott": "Scott",
+  "charmin": "Charmin",
+  "bounty": "Bounty",
+  "dawn": "Dawn",
+  "ajax": "Ajax",
+  "clorox": "Clorox",
+  "lysol": "Lysol",
+  "febreze": "Febreze",
+  "swiffer": "Swiffer",
+  "pledge": "Pledge",
+  "windex": "Windex",
+  "gain": "Gain",
+  "cheer": "Cheer",
+  "downy": "Downy",
+  "bounce": "Bounce",
+  "snuggle": "Snuggle",
+  "delta": "Delta",
+  "united": "United",
+  "southwest": "Southwest",
+  "jetblue": "JetBlue",
+  "spirit": "Spirit",
+  "frontier": "Frontier",
+  "alaska": "Alaska",
+  "hawaiian": "Hawaiian",
+  "lufthansa": "Lufthansa",
+  "emirates": "Emirates",
+  "qatar": "Qatar",
+  "klm": "KLM",
+  "virgin": "Virgin",
+  "nfl": "NFL",
+  "nba": "NBA",
+  "mlb": "MLB",
+  "nhl": "NHL",
+  "fifa": "FIFA",
+  "uefa": "UEFA",
+  "espn": "ESPN",
+  "fox": "Fox",
+  "cnn": "CNN",
+  "bbc": "BBC",
+  "nbc": "NBC",
+  "abc": "ABC",
+  "cbs": "CBS",
+  "pbs": "PBS",
+  "mtv": "MTV",
+  "vh1": "VH1",
+  "nickelodeon": "Nickelodeon",
+  "lego": "Lego",
+  "mattel": "Mattel",
+  "hasbro": "Hasbro",
+  "fisherprice": "Fisher-Price",
+  "fisher-price": "Fisher-Price",
+  "barbie": "Barbie",
+  "nerf": "Nerf",
+  "playdoh": "Play-Doh",
+  "play-doh": "Play-Doh"
+ },
+ "bigrams": {
+  "i": [
+   "am",
+   "have",
+   "think"
+  ],
+  "you": [
+   "are",
+   "have",
+   "can"
+  ],
+  "he": [
+   "is",
+   "was",
+   "has"
+  ],
+  "she": [
+   "is",
+   "was",
+   "has"
+  ],
+  "we": [
+   "are",
+   "have",
+   "will"
+  ],
+  "they": [
+   "are",
+   "have",
+   "will"
+  ],
+  "it": [
+   "is",
+   "was",
+   "will"
+  ],
+  "thank": [
+   "you",
+   "god",
+   "so"
+  ],
+  "thanks": [
+   "for",
+   "so",
+   "a"
+  ],
+  "how": [
+   "are",
+   "do",
+   "is"
+  ],
+  "what": [
+   "is",
+   "are",
+   "do"
+  ],
+  "when": [
+   "you",
+   "i",
+   "it"
+  ],
+  "where": [
+   "is",
+   "are",
+   "you"
+  ],
+  "why": [
+   "is",
+   "are",
+   "did"
+  ],
+  "who": [
+   "is",
+   "are",
+   "was"
+  ],
+  "good": [
+   "morning",
+   "afternoon",
+   "night"
+  ],
+  "happy": [
+   "birthday",
+   "new",
+   "to"
+  ],
+  "going": [
+   "to",
+   "home",
+   "back"
+  ],
+  "want": [
+   "to",
+   "a",
+   "you"
+  ],
+  "need": [
+   "to",
+   "a",
+   "help"
+  ],
+  "can": [
+   "you",
+   "i",
+   "be"
+  ],
+  "will": [
+   "be",
+   "have",
+   "go"
+  ],
+  "would": [
+   "like",
+   "be",
+   "love"
+  ],
+  "should": [
+   "be",
+   "you",
+   "we"
+  ],
+  "let": [
+   "me",
+   "us",
+   "go"
+  ],
+  "do": [
+   "you",
+   "i",
+   "not"
+  ],
+  "did": [
+   "you",
+   "he",
+   "she"
+  ],
+  "is": [
+   "a",
+   "the",
+   "not"
+  ],
+  "are": [
+   "you",
+   "we",
+   "they"
+  ],
+  "was": [
+   "a",
+   "the",
+   "not"
+  ],
+  "were": [
+   "you",
+   "we",
+   "they"
+  ],
+  "have": [
+   "a",
+   "been",
+   "to"
+  ],
+  "has": [
+   "been",
+   "a",
+   "the"
+  ],
+  "had": [
+   "a",
+   "been",
+   "the"
+  ],
+  "this": [
+   "is",
+   "morning",
+   "one"
+  ],
+  "that": [
+   "is",
+   "was",
+   "the"
+  ],
+  "there": [
+   "is",
+   "are",
+   "was"
+  ],
+  "here": [
+   "is",
+   "are",
+   "you"
+  ],
+  "my": [
+   "name",
+   "wife",
+   "family"
+  ],
+  "your": [
+   "name",
+   "family",
+   "time"
+  ],
+  "his": [
+   "name",
+   "family",
+   "car"
+  ],
+  "her": [
+   "name",
+   "family",
+   "car"
+  ],
+  "their": [
+   "name",
+   "family",
+   "car"
+  ],
+  "our": [
+   "family",
+   "house",
+   "time"
+  ],
+  "very": [
+   "good",
+   "much",
+   "happy"
+  ],
+  "really": [
+   "good",
+   "want",
+   "like"
+  ],
+  "not": [
+   "only",
+   "sure",
+   "going"
+  ],
+  "just": [
+   "want",
+   "got",
+   "a"
+  ],
+  "get": [
+   "up",
+   "back",
+   "the"
+  ],
+  "go": [
+   "to",
+   "home",
+   "back"
+  ],
+  "come": [
+   "back",
+   "home",
+   "on"
+  ],
+  "look": [
+   "at",
+   "for",
+   "like"
+  ],
+  "take": [
+   "a",
+   "care",
+   "the"
+  ],
+  "make": [
+   "sure",
+   "a",
+   "it"
+  ],
+  "see": [
+   "you",
+   "the",
+   "a"
+  ],
+  "know": [
+   "how",
+   "what",
+   "if"
+  ],
+  "think": [
+   "about",
+   "it",
+   "so"
+  ],
+  "feel": [
+   "like",
+   "good",
+   "better"
+  ],
+  "love": [
+   "you",
+   "it",
+   "this"
+  ],
+  "like": [
+   "to",
+   "a",
+   "this"
+  ],
+  "one": [
+   "of",
+   "more",
+   "day"
+  ],
+  "two": [
+   "days",
+   "years",
+   "things"
+  ],
+  "first": [
+   "time",
+   "of",
+   "one"
+  ],
+  "last": [
+   "night",
+   "week",
+   "year"
+  ],
+  "next": [
+   "week",
+   "time",
+   "day"
+  ],
+  "new": [
+   "year",
+   "day",
+   "one"
+  ],
+  "today": [
+   "is",
+   "i",
+   "we"
+  ],
+  "tomorrow": [
+   "morning",
+   "i",
+   "will"
+  ],
+  "yesterday": [
+   "was",
+   "morning",
+   "i"
+  ],
+  "morning": [
+   "good",
+   "i",
+   "at"
+  ],
+  "night": [
+   "good",
+   "last",
+   "at"
+  ],
+  "home": [
+   "from",
+   "to",
+   "at"
+  ],
+  "work": [
+   "from",
+   "at",
+   "on"
+  ],
+  "school": [
+   "at",
+   "today",
+   "after"
+  ],
+  "church": [
+   "at",
+   "today",
+   "tomorrow"
+  ],
+  "family": [
+   "is",
+   "time",
+   "today"
+  ],
+  "time": [
+   "to",
+   "for",
+   "is"
+  ],
+  "day": [
+   "is",
+   "at",
+   "today"
+  ],
+  "people": [
+   "are",
+   "who",
+   "say"
+  ],
+  "way": [
+   "to",
+   "of",
+   "back"
+  ],
+  "back": [
+   "home",
+   "to",
+   "at"
+  ],
+  "out": [
+   "of",
+   "to",
+   "the"
+  ],
+  "up": [
+   "to",
+   "the",
+   "a"
+  ],
+  "down": [
+   "to",
+   "the",
+   "a"
+  ],
+  "over": [
+   "the",
+   "to",
+   "a"
+  ],
+  "because": [
+   "i",
+   "you",
+   "it"
+  ],
+  "if": [
+   "you",
+   "i",
+   "we"
+  ],
+  "while": [
+   "i",
+   "you",
+   "we"
+  ],
+  "after": [
+   "the",
+   "a",
+   "lunch"
+  ],
+  "before": [
+   "the",
+   "a",
+   "bed"
+  ],
+  "during": [
+   "the",
+   "my",
+   "this"
+  ],
+  "through": [
+   "the",
+   "a",
+   "time"
+  ],
+  "without": [
+   "a",
+   "the",
+   "my"
+  ],
+  "with": [
+   "a",
+   "the",
+   "my"
+  ],
+  "for": [
+   "the",
+   "a",
+   "my"
+  ],
+  "from": [
+   "the",
+   "a",
+   "my"
+  ],
+  "by": [
+   "the",
+   "a",
+   "now"
+  ],
+  "at": [
+   "the",
+   "home",
+   "work"
+  ],
+  "in": [
+   "the",
+   "a",
+   "my"
+  ],
+  "on": [
+   "the",
+   "a",
+   "my"
+  ],
+  "to": [
+   "be",
+   "go",
+   "the"
+  ],
+  "of": [
+   "the",
+   "course",
+   "my"
+  ],
+  "and": [
+   "then",
+   "the",
+   "i"
+  ],
+  "but": [
+   "i",
+   "it",
+   "the"
+  ],
+  "so": [
+   "i",
+   "you",
+   "much"
+  ],
+  "please": [
+   "let",
+   "call",
+   "send"
+  ],
+  "sorry": [
+   "about",
+   "for",
+   "that"
+  ],
+  "a": [
+   "lot",
+   "few",
+   "good"
+  ],
+  "an": [
+   "hour",
+   "idea",
+   "old"
+  ],
+  "no": [
+   "problem",
+   "worries",
+   "idea"
+  ],
+  "yes": [
+   "please",
+   "sir",
+   "maam"
+  ],
+  "the": [
+   "first",
+   "best",
+   "only"
+  ],
+  "am": [
+   "going",
+   "not",
+   "so"
+  ],
+  "these": [
+   "are",
+   "were",
+   "days"
+  ],
+  "those": [
+   "are",
+   "were",
+   "days"
+  ],
+  "three": [
+   "days",
+   "years",
+   "things"
+  ],
+  "many": [
+   "people",
+   "things",
+   "days"
+  ],
+  "few": [
+   "days",
+   "things",
+   "people"
+  ],
+  "several": [
+   "days",
+   "years",
+   "things"
+  ],
+  "all": [
+   "the",
+   "people",
+   "things"
+  ],
+  "some": [
+   "people",
+   "things",
+   "days"
+  ],
+  "both": [
+   "of",
+   "are",
+   "the"
+  ],
+  "other": [
+   "people",
+   "things",
+   "days"
+  ],
+  "each": [
+   "day",
+   "time",
+   "one"
+  ],
+  "every": [
+   "day",
+   "time",
+   "morning"
+  ],
+  "another": [
+   "day",
+   "time",
+   "one"
+  ],
+  "does": [
+   "it",
+   "he",
+   "she"
+  ],
+  "goes": [
+   "to",
+   "home",
+   "back"
+  ],
+  "wants": [
+   "to",
+   "a",
+   "me"
+  ],
+  "needs": [
+   "to",
+   "a",
+   "help"
+  ],
+  "likes": [
+   "to",
+   "a",
+   "this"
+  ],
+  "kids": [
+   "are",
+   "have",
+   "love"
+  ],
+  "friends": [
+   "are",
+   "have",
+   "and"
+  ],
+  "days": [
+   "ago",
+   "later",
+   "are"
+  ],
+  "years": [
+   "ago",
+   "later",
+   "old"
+  ],
+  "things": [
+   "are",
+   "like",
+   "to"
+  ]
+ },
+ "trigrams": {
+  "thank you": [
+   "for",
+   "so",
+   "much"
+  ],
+  "how are": [
+   "you",
+   "things",
+   "we"
+  ],
+  "i have": [
+   "to",
+   "been",
+   "a"
+  ],
+  "i am": [
+   "going",
+   "not",
+   "so"
+  ],
+  "going to": [
+   "the",
+   "be",
+   "get"
+  ],
+  "want to": [
+   "go",
+   "be",
+   "get"
+  ],
+  "need to": [
+   "go",
+   "be",
+   "get"
+  ],
+  "have to": [
+   "go",
+   "be",
+   "get"
+  ],
+  "let me": [
+   "know",
+   "see",
+   "help"
+  ],
+  "look at": [
+   "the",
+   "this",
+   "that"
+  ],
+  "in the": [
+   "morning",
+   "evening",
+   "middle"
+  ],
+  "on the": [
+   "other",
+   "same",
+   "top"
+  ],
+  "at the": [
+   "moment",
+   "time",
+   "top"
+  ],
+  "for the": [
+   "first",
+   "last",
+   "next"
+  ],
+  "to the": [
+   "store",
+   "house",
+   "top"
+  ],
+  "with the": [
+   "help",
+   "time",
+   "kids"
+  ],
+  "from the": [
+   "store",
+   "house",
+   "top"
+  ],
+  "one of": [
+   "the",
+   "my",
+   "those"
+  ],
+  "a lot": [
+   "of",
+   "more",
+   "better"
+  ],
+  "by the": [
+   "way",
+   "time",
+   "end"
+  ],
+  "out of": [
+   "the",
+   "my",
+   "time"
+  ],
+  "up to": [
+   "you",
+   "me",
+   "the"
+  ],
+  "back to": [
+   "the",
+   "work",
+   "school"
+  ],
+  "next to": [
+   "the",
+   "me",
+   "my"
+  ],
+  "in front": [
+   "of",
+   "the",
+   "me"
+  ],
+  "as soon": [
+   "as",
+   "possible",
+   "i"
+  ],
+  "i will": [
+   "be",
+   "go",
+   "get"
+  ],
+  "you will": [
+   "be",
+   "see",
+   "get"
+  ],
+  "we will": [
+   "be",
+   "go",
+   "see"
+  ],
+  "they will": [
+   "be",
+   "go",
+   "have"
+  ],
+  "he will": [
+   "be",
+   "go",
+   "have"
+  ],
+  "she will": [
+   "be",
+   "go",
+   "have"
+  ],
+  "it will": [
+   "be",
+   "take",
+   "rain"
+  ],
+  "i was": [
+   "going",
+   "not",
+   "born"
+  ],
+  "you were": [
+   "going",
+   "not",
+   "right"
+  ],
+  "we were": [
+   "going",
+   "not",
+   "talking"
+  ],
+  "they were": [
+   "going",
+   "not",
+   "talking"
+  ],
+  "this is": [
+   "a",
+   "the",
+   "my"
+  ],
+  "that is": [
+   "a",
+   "the",
+   "not"
+  ],
+  "there is": [
+   "a",
+   "no",
+   "the"
+  ],
+  "there are": [
+   "many",
+   "some",
+   "no"
+  ],
+  "here is": [
+   "the",
+   "my",
+   "a"
+  ],
+  "what is": [
+   "your",
+   "the",
+   "this"
+  ],
+  "what are": [
+   "you",
+   "we",
+   "they"
+  ],
+  "when are": [
+   "you",
+   "we",
+   "they"
+  ],
+  "where is": [
+   "the",
+   "my",
+   "your"
+  ],
+  "why is": [
+   "it",
+   "this",
+   "that"
+  ],
+  "how is": [
+   "your",
+   "the",
+   "it"
+  ]
+ },
+ "confusables": [
+  [
+   "their",
+   "there",
+   "they're"
+  ],
+  [
+   "your",
+   "you're"
+  ],
+  [
+   "its",
+   "it's"
+  ],
+  [
+   "to",
+   "too",
+   "two"
+  ],
+  [
+   "then",
+   "than"
+  ],
+  [
+   "affect",
+   "effect"
+  ],
+  [
+   "loose",
+   "lose"
+  ],
+  [
+   "were",
+   "where",
+   "we're"
+  ],
+  [
+   "whether",
+   "weather"
+  ],
+  [
+   "accept",
+   "except"
+  ],
+  [
+   "quiet",
+   "quite"
+  ],
+  [
+   "whose",
+   "who's"
+  ],
+  [
+   "hear",
+   "here"
+  ],
+  [
+   "write",
+   "right"
+  ],
+  [
+   "weak",
+   "week"
+  ],
+  [
+   "break",
+   "brake"
+  ],
+  [
+   "piece",
+   "peace"
+  ],
+  [
+   "through",
+   "threw"
+  ],
+  [
+   "whole",
+   "hole"
+  ],
+  [
+   "new",
+   "knew"
+  ],
+  [
+   "know",
+   "no"
+  ]
+ ]
+}

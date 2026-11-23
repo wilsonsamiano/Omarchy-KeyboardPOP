@@ -1,0 +1,17 @@
+<RCC>
+    <qresource prefix="/">
+        <file alias="Main.qml">Main.qml</file>
+        <file alias="StripButton.qml">StripButton.qml</file>
+        <file alias="i18n/es.json">i18n/es.json</file>
+        <file alias="i18n/fil.json">i18n/fil.json</file>
+        <file alias="i18n/de.json">i18n/de.json</file>
+        <file alias="i18n/fr.json">i18n/fr.json</file>
+        <file alias="i18n/pt.json">i18n/pt.json</file>
+        <file alias="i18n/pt-BR.json">i18n/pt-BR.json</file>
+        <file alias="data/words_en.txt">data/words_en.txt</file>
+        <file alias="data/words_tl.txt">data/words_tl.txt</file>
+        <file alias="data/words_es.txt">data/words_es.txt</file>
+        <file alias="data/tables.json">data/tables.json</file>
+        <file alias="data/ngram_model.txt">data/ngram_model.txt</file>
+    </qresource>
+</RCC>

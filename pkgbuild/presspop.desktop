@@ -1,0 +1,17 @@
+[Desktop Entry]
+Type=Application
+Name=PressPop
+Comment=Touch keyboard with key popups and swipe typing
+Name[es]=PressPop
+Comment[es]=Teclado táctil con teclas emergentes y escritura deslizando
+Comment[fil]=Touch keyboard na may popup ng key at swipe typing
+Comment[de]=Bildschirmtastatur mit Tasten-Popups und Wischtippen
+Comment[fr]=Clavier tactile avec bulles de touches et saisie par glissement
+Comment[pt]=Teclado tátil com teclas em balão e escrita por deslize
+Comment[pt_BR]=Teclado touch com teclas em balão e digitação por deslize
+Exec=presspop toggle
+Icon=presspop
+Terminal=false
+Categories=Utility;Accessibility;
+Keywords=keyboard;osk;on-screen;virtual;touch;tablet;swipe;
+StartupWMClass=presspop
