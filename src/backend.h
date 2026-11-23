@@ -25,6 +25,7 @@ class Backend : public QObject {
     Q_PROPERTY(QString status READ status NOTIFY statusChanged)
     Q_PROPERTY(bool statusIsError READ statusIsError NOTIFY statusChanged)
     Q_PROPERTY(bool password READ password NOTIFY suggestionsChanged)
+    Q_PROPERTY(int modifiers READ modifiers NOTIFY modifiersChanged)
 
 public:
     Backend(Dictionary &dictionary, Personal &personal, QObject *parent = nullptr);
@@ -37,6 +38,9 @@ public:
     QStringList suggestions() const { return m_suggestions; }
     bool shiftOn() const { return m_shiftOn; }
     bool shiftLock() const { return m_shiftLock; }
+    // Ctrl, Alt, and Super latched from the control row (TextSink bits):
+    // the next key goes out with them held, then they let go.
+    int modifiers() const { return m_modifiers; }
     QString language() const;
     QString status() const { return m_status; }
     bool statusIsError() const { return m_statusIsError; }
@@ -57,6 +61,9 @@ public:
     Q_INVOKABLE void moveCursor(int columns, int lines);
     Q_INVOKABLE void pickSuggestion(int index);
     Q_INVOKABLE void toggleShift();
+    Q_INVOKABLE void toggleModifier(int modifier);
+    // A key from the control row: an XKB keysym name like "Escape" or "Left".
+    Q_INVOKABLE void controlKey(const QString &key);
     Q_INVOKABLE void cycleLanguage();
 
     // A new field or a freshly shown keyboard: forget the word in progress.
@@ -69,10 +76,15 @@ public:
 signals:
     void suggestionsChanged();
     void shiftChanged();
+    void modifiersChanged();
     void languageChanged();
     void statusChanged();
 
 private:
+    // Sends `key` as a shortcut when a modifier is latched, then lets the
+    // modifiers go. False when nothing is latched.
+    bool sendLatched(const QString &key);
+    int m_modifiers = 0;
     struct Correction { QString original, replacement; };
 
     std::optional<QString> before() const;

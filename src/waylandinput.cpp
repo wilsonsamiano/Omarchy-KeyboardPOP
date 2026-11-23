@@ -295,7 +295,7 @@ void WaylandInput::sendKey(Key key, bool control) {
             m_state.before += '\n';
         break;
     case Key::BackSpace:
-        pressKeysym(XKB_KEY_BackSpace, control);
+        pressKeysym(XKB_KEY_BackSpace, control ? ControlMask : 0);
         if (control) {
             m_shadowKnown = false;
             m_state.surroundingKnown = false;
@@ -306,7 +306,7 @@ void WaylandInput::sendKey(Key key, bool control) {
     default: {
         const uint32_t keysym = key == Key::Tab ? XKB_KEY_Tab : key == Key::Left ? XKB_KEY_Left
                               : key == Key::Right ? XKB_KEY_Right : key == Key::Up ? XKB_KEY_Up : XKB_KEY_Down;
-        pressKeysym(keysym, control);
+        pressKeysym(keysym, control ? ControlMask : 0);
         // The cursor went somewhere only the app knows.
         m_shadow.clear();
         m_shadowKnown = false;
@@ -335,19 +335,35 @@ int WaylandInput::keycodeFor(uint32_t keysym) {
     return index + 9;
 }
 
-void WaylandInput::pressKeysym(uint32_t keysym, bool control) {
+void WaylandInput::pressKeysym(uint32_t keysym, uint32_t modifiers) {
     if (!m_vk)
         return;
     const int keycode = keycodeFor(keysym);
     const uint32_t time = uint32_t(m_clock.elapsed());
     m_lastKey.start();
-    if (control)
-        zwp_virtual_keyboard_v1_modifiers(m_vk, ControlMask, 0, 0, 0);
+    if (modifiers)
+        zwp_virtual_keyboard_v1_modifiers(m_vk, modifiers, 0, 0, 0);
     // The protocol takes evdev codes, which are XKB keycodes minus 8.
     zwp_virtual_keyboard_v1_key(m_vk, time, keycode - 8, WL_KEYBOARD_KEY_STATE_PRESSED);
     zwp_virtual_keyboard_v1_key(m_vk, time, keycode - 8, WL_KEYBOARD_KEY_STATE_RELEASED);
-    if (control)
+    if (modifiers)
         zwp_virtual_keyboard_v1_modifiers(m_vk, 0, 0, 0, 0);
+}
+
+void WaylandInput::sendCombo(const QString &key, int modifiers) {
+    if (!m_vk || key.isEmpty() || m_mode == Mode::Unavailable || m_mode == Mode::Connecting)
+        return;
+    const QList<uint> codepoints = key.toUcs4();
+    const uint32_t keysym = codepoints.size() == 1 ? xkb_utf32_to_keysym(codepoints[0])
+                                                   : xkb_keysym_from_name(key.toUtf8().constData(), XKB_KEYSYM_NO_FLAGS);
+    if (keysym == XKB_KEY_NoSymbol)
+        return;
+    pressKeysym(keysym, uint32_t(modifiers));
+    // A shortcut or a cursor key can change the text anywhere.
+    m_shadow.clear();
+    m_shadowKnown = false;
+    m_state.surroundingKnown = false;
+    flush();
 }
 
 void WaylandInput::uploadKeymap() {

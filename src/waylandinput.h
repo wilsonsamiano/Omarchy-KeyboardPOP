@@ -38,6 +38,7 @@ public:
     void commitText(const QString &text) override;
     void deleteBefore(int characters) override;
     void sendKey(Key key, bool control = false) override;
+    void sendCombo(const QString &key, int modifiers) override;
     std::optional<QString> textBeforeCursor() const override;
     bool isPassword() const override;
     bool wantsAutoCapitalization() const override;
@@ -72,7 +73,7 @@ private:
     void setMode(Mode mode);
     bool committingThroughInputMethod() const;
     void typeCharacter(uint32_t codepoint);
-    void pressKeysym(uint32_t keysym, bool control = false);
+    void pressKeysym(uint32_t keysym, uint32_t modifiers = 0);
     int keycodeFor(uint32_t keysym);
     void uploadKeymap();
     void flush();

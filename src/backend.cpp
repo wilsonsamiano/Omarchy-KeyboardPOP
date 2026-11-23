@@ -103,6 +103,10 @@ std::optional<QString> Backend::before() const {
 }
 
 void Backend::reset() {
+    if (m_modifiers) {
+        m_modifiers = 0;
+        emit modifiersChanged();
+    }
     m_typed.clear();
     m_typedHadUpper = false;
     m_autoSpaced = false;
@@ -326,6 +330,11 @@ QString Backend::finishWord() {
 void Backend::typeCharacter(const QString &text) {
     if (!m_sink || text.isEmpty())
         return;
+    // Shortcuts use the plain key. Shift stays out of them: it is often on
+    // by itself at the start of a field, which would turn Ctrl+C into
+    // Ctrl+Shift+C.
+    if (m_modifiers && sendLatched(text.toLower()))
+        return;
     m_lastCorrected.reset();
     m_swipeAlternative.reset();
     const QChar first = text.front();
@@ -364,7 +373,7 @@ void Backend::typeCharacter(const QString &text) {
 }
 
 void Backend::space() {
-    if (!m_sink)
+    if (!m_sink || sendLatched("space"))
         return;
     const qint64 t = now();
     // Double-tap Space ends the sentence.
@@ -423,7 +432,7 @@ bool Backend::tryUndoLastCorrection() {
 }
 
 void Backend::backspace() {
-    if (!m_sink || tryUndoLastCorrection())
+    if (!m_sink || sendLatched("BackSpace") || tryUndoLastCorrection())
         return;
     m_sink->sendKey(TextSink::Key::BackSpace);
     if (!m_typed.isEmpty())
@@ -458,7 +467,7 @@ void Backend::deleteWord() {
 }
 
 void Backend::enter() {
-    if (!m_sink)
+    if (!m_sink || sendLatched("Return"))
         return;
     m_pending.reset();
     if (!m_typed.isEmpty() && !password())
@@ -654,4 +663,35 @@ void Backend::refresh() {
         m_suggestions = next;
         emit suggestionsChanged();
     }
+}
+
+bool Backend::sendLatched(const QString &key) {
+    if (!m_modifiers || !m_sink)
+        return false;
+    m_sink->sendCombo(key, m_modifiers);
+    m_modifiers = 0;
+    emit modifiersChanged();
+    // Whatever the shortcut did, the word in progress is over.
+    m_typed.clear();
+    m_pending.reset();
+    m_autoSpaced = false;
+    refresh();
+    return true;
+}
+
+void Backend::toggleModifier(int modifier) {
+    m_modifiers ^= modifier;
+    emit modifiersChanged();
+}
+
+void Backend::controlKey(const QString &key) {
+    if (!m_sink)
+        return;
+    if (sendLatched(key))
+        return;
+    m_sink->sendCombo(key, 0);
+    m_typed.clear();
+    m_pending.reset();
+    m_autoSpaced = false;
+    refresh();
 }

@@ -32,6 +32,10 @@ public:
         return known ? std::optional<QString>(text) : std::nullopt;
     }
     bool isPassword() const override { return secret; }
+    QStringList combos;
+    void sendCombo(const QString &key, int modifiers) override {
+        combos << QString("%1+%2").arg(modifiers).arg(key);
+    }
 };
 
 class KeyboardpopTests : public QObject {
@@ -123,6 +127,55 @@ private slots:
     }
 
     // ---- Swipe ----
+
+    // ---- Control row ----
+
+    // A latched modifier turns the next key into a shortcut, then lets go.
+    void latchedModifiersSendShortcuts() {
+        auto kb = keyboard();
+        kb->type("hi");
+        kb->backend.toggleModifier(TextSink::ControlModifier);
+        QCOMPARE(kb->backend.modifiers(), int(TextSink::ControlModifier));
+        kb->backend.typeCharacter("C"); // Shift doesn't come along
+        QCOMPARE(kb->field.combos, QStringList{"4+c"});
+        QCOMPARE(kb->field.text, QString("hi"));
+        QCOMPARE(kb->backend.modifiers(), 0);
+        kb->backend.typeCharacter("x"); // plain typing again
+        QCOMPARE(kb->field.text, QString("hix"));
+
+        kb->backend.toggleModifier(TextSink::SuperModifier);
+        kb->backend.space();
+        kb->backend.toggleModifier(TextSink::AltModifier);
+        kb->backend.toggleModifier(TextSink::AltModifier); // tapped twice: off
+        kb->backend.enter();
+        QCOMPARE(kb->field.combos, (QStringList{"4+c", "64+space"}));
+        QVERIFY(kb->field.text.endsWith('\n'));
+    }
+
+    void controlKeysSendNonTextKeys() {
+        auto kb = keyboard();
+        kb->backend.controlKey("Escape");
+        kb->backend.toggleModifier(TextSink::ControlModifier);
+        kb->backend.controlKey("Left");
+        QCOMPARE(kb->field.combos, (QStringList{"0+Escape", "4+Left"}));
+        QCOMPARE(kb->backend.modifiers(), 0);
+    }
+
+    void everyPageHasTheControlRow() {
+        KeyboardView view;
+        view.setSize(QSizeF(1200, 300));
+        for (auto mode : {KeyboardView::Mode::Letters, KeyboardView::Mode::Numbers, KeyboardView::Mode::Symbols,
+                          KeyboardView::Mode::Emoji, KeyboardView::Mode::Numpad}) {
+            view.setMode(mode);
+            QStringList outputs;
+            for (const auto &placed : view.keys())
+                if (placed.key.action == KeyboardView::Action::Control)
+                    outputs << placed.key.output;
+            QCOMPARE(outputs, (QStringList{"Escape", "Tab", "Left", "Up", "Down", "Right"}));
+            // It sits above the typing rows.
+            QCOMPARE(view.keys().first().key.output, QString("Escape"));
+        }
+    }
 
     // ---- Multitouch ----
 

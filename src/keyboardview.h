@@ -29,7 +29,9 @@ class KeyboardView : public QQuickPaintedItem {
     Q_PROPERTY(QString mode READ modeName NOTIFY modeChanged)
 
 public:
-    enum class Action { Char, Space, Shift, Delete, Mode, Enter };
+    // Modifier latches Ctrl, Alt, or Super (output holds the TextSink bit);
+    // Control sends a key that isn't text (output holds its keysym name).
+    enum class Action { Char, Space, Shift, Delete, Mode, Enter, Modifier, Control };
     enum class Mode { Letters, Numbers, Symbols, Emoji, Numpad };
 
     struct Key {

@@ -33,6 +33,9 @@ Setup > Language.
   down moves lines).
 - **Double-tap Shift** for caps lock. **Double-tap Space** for `. `.
 - **Delete** repeats while held; swipe left off it to delete a word.
+- **Control row** on every page, for driving the computer by touch: `esc`,
+  `tab`, the arrows, and `ctrl`, `alt`, and `❖` (Super). The modifiers
+  latch: tap `❖` then Space for the Omarchy menu, `ctrl` then `c` to copy.
 - **Pages:** letters, numbers, symbols, 30 emoji, and a phone-style number
   pad.
 - **Languages:** tap **EN** in the strip to cycle English, Tagalog, and
@@ -126,7 +129,9 @@ which would otherwise reset the screen to upright. The lock state is
 written to `~/.local/state/autorotate/status` for a bar widget to show.
 
 **`touchswipe`** switches desktops with four-finger swipes on the
-touchscreen: left for the next desktop, right for the previous one. Hyprland
+touchscreen: left for the next desktop, right for the previous one. A touch
+also dismisses the Omarchy screensaver, which otherwise only closes on a
+keypress. Hyprland
 only does gestures on touchpads, so it reads the touchscreen (through the
 same udev rule as the keyboard) and follows `autorotate`'s rotation. It calls
 a `desktop_step` function that goes in `~/.config/hypr/input.lua`, along with

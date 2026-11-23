@@ -11,7 +11,9 @@ ApplicationWindow {
     visible: false
     title: "KeyboardPOP"
     width: Screen.width
-    height: stripHeight + Math.round(Math.min(260, Math.max(170, Screen.height * 0.25)))
+    // The typing rows, plus a slimmer control row (Esc, Tab, Ctrl, Alt,
+    // Super, arrows) on top.
+    height: stripHeight + Math.round(Math.min(260, Math.max(170, Screen.height * 0.25)) * 1.18)
     color: "#151517"
 
     Material.theme: Material.Dark

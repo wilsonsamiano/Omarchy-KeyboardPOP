@@ -1,5 +1,6 @@
 // Ported from PressPop Keyboard's KeyboardView.kt (MIT, Wilson Samiano).
 #include "keyboardview.h"
+#include "textsink.h"
 
 #include "backend.h"
 #include "dictionary.h"
@@ -82,11 +83,13 @@ void KeyboardView::setBackend(Backend *backend) {
     if (m_backend)
         disconnect(m_backend, nullptr, this, nullptr);
     m_backend = backend;
-    if (m_backend)
+    if (m_backend) {
         connect(m_backend, &Backend::shiftChanged, this, [this] {
             rebuild();
             update();
         });
+        connect(m_backend, &Backend::modifiersChanged, this, [this] { update(); });
+    }
     rebuild();
     emit backendChanged();
 }
@@ -187,6 +190,15 @@ void KeyboardView::rebuild() {
     const Key shift{m_backend && m_backend->shiftLock() ? "⇪" : "⇧", Action::Shift, {}}, del{"⌫", Action::Delete, {}, {}, 1.5}, enter{"⏎", Action::Enter, {}, {}, 1.3};
     const Key emoji{"☺︎", Action::Mode, {}, Mode::Emoji, .9};
     auto mode = [](const QString &label, Mode target, double weight) { return Key{label, Action::Mode, {}, target, weight}; };
+    // The control row, on every page, for driving the computer: menus and
+    // prompts need Escape, Tab, and the arrows, and shortcuts need Ctrl,
+    // Alt, and Super. The modifiers latch for the next key.
+    auto control = [](const QString &label, const QString &key) { return Key{label, Action::Control, key}; };
+    auto modifier = [](const QString &label, int bit) { return Key{label, Action::Modifier, QString::number(bit)}; };
+    const QVector<Key> controlRow{control("esc", "Escape"), control("tab", "Tab"),
+                                  modifier("ctrl", TextSink::ControlModifier), modifier("alt", TextSink::AltModifier),
+                                  modifier("❖", TextSink::SuperModifier), control("←", "Left"), control("↑", "Up"),
+                                  control("↓", "Down"), control("→", "Right")};
 
     switch (m_mode) {
     case Mode::Letters:
@@ -219,6 +231,7 @@ void KeyboardView::rebuild() {
                    {enter.label, Action::Enter, {}, {}, 1.5}}};
         break;
     }
+    m_rows.prepend(controlRow);
     layoutKeys();
 }
 
@@ -230,23 +243,26 @@ void KeyboardView::layoutKeys() {
     const double offset = (width() - w) / 2, h = height() - m_keysTop;
     if (w <= 0 || h <= 0 || m_rows.isEmpty())
         return;
-    const double rowHeight = (h - Gap * (m_rows.size() + 1)) / m_rows.size();
+    // The control row (first) is slimmer than the typing rows.
+    constexpr double ControlRowShare = .72;
+    const double rowHeight = (h - Gap * (m_rows.size() + 1)) / (m_rows.size() - 1 + ControlRowShare);
     double top = m_keysTop + Gap;
     for (int r = 0; r < m_rows.size(); ++r) {
         const auto &row = m_rows[r];
+        const double thisHeight = r == 0 ? rowHeight * ControlRowShare : rowHeight;
         double total = 0;
         for (const Key &k : row)
             total += k.weight;
         // The home row sits in a little, like a real keyboard's.
-        const bool inset = m_mode == Mode::Letters && r == 1;
+        const bool inset = m_mode == Mode::Letters && r == 2;
         const double rowWidth = (w - Gap * 2) * (inset ? .9 : 1);
         double left = offset + Gap + (inset ? (w - rowWidth) / 2 - Gap : 0);
         for (const Key &k : row) {
             const double kw = rowWidth * k.weight / total - Gap;
-            m_keys.push_back({k, QRectF(left, top, kw, rowHeight)});
+            m_keys.push_back({k, QRectF(left, top, kw, thisHeight)});
             left += kw + Gap;
         }
-        top += rowHeight + Gap;
+        top += thisHeight + Gap;
     }
 }
 
@@ -526,6 +542,8 @@ void KeyboardView::fireKey(int index, bool deleteRepeated) {
             m_backend->backspace();
         break;
     case Action::Enter: m_backend->enter(); break;
+    case Action::Modifier: m_backend->toggleModifier(key.output.toInt()); break;
+    case Action::Control: m_backend->controlKey(key.output); break;
     }
 }
 
@@ -622,8 +640,12 @@ void KeyboardView::drawKey(QPainter *painter, const PlacedKey &placed, bool pres
     const Key &key = placed.key;
     const QRectF rect = placed.rect;
     const bool action = key.action == Action::Shift || key.action == Action::Delete || key.action == Action::Mode
-                        || key.action == Action::Enter;
-    const bool shiftOn = key.action == Action::Shift && m_backend && m_backend->shiftOn();
+                        || key.action == Action::Enter || key.action == Action::Modifier
+                        || key.action == Action::Control;
+    // A latched modifier lights up like Shift does.
+    const bool shiftOn = (key.action == Action::Shift && m_backend && m_backend->shiftOn())
+                         || (key.action == Action::Modifier && m_backend
+                             && (m_backend->modifiers() & key.output.toInt()));
     const double r = std::min(6, m_radius);
 
     QColor top = KeyTop, bottom = KeyBottom, text = Label;
