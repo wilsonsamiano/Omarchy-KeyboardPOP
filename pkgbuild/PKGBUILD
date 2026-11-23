@@ -1,6 +1,6 @@
 pkgname=presspop
 pkgver=0.1.0
-pkgrel=1
+pkgrel=3
 pkgdesc='Touch keyboard for Omarchy with key popups, swipe typing, and suggestions'
 arch=('x86_64' 'aarch64')
 license=('MIT')

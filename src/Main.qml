@@ -11,14 +11,14 @@ ApplicationWindow {
     visible: false
     title: "PressPop"
     width: Screen.width
-    height: stripHeight + Math.round(Math.min(340, Math.max(220, Screen.height * 0.34)))
+    height: stripHeight + Math.round(Math.min(260, Math.max(170, Screen.height * 0.25)))
     color: "#151517"
 
     Material.theme: Material.Dark
     Material.accent: theme.accent
     Material.roundedScale: theme.radius
 
-    readonly property int stripHeight: 48
+    readonly property int stripHeight: 44
     readonly property color stripColor: "#1d1d20"
     readonly property color textColor: "#f2f2f4"
     readonly property color mutedColor: "#8e8e93"
@@ -147,6 +147,7 @@ ApplicationWindow {
         anchors.fill: parent
         z: 1
         keysTop: win.stripHeight
+        maxKeysWidth: 960
         keyboardBackend: backend
         accent: theme.accent
         accentForeground: theme.accentForeground

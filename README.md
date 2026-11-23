@@ -77,7 +77,7 @@ o.launch_on_start("presspop hide")
 | Command | |
 |---|---|
 | `presspop` / `presspop toggle` | Show the keyboard, or hide it if it's showing |
-| `presspop show` / `presspop hide` | Show or hide it |
+| `presspop show` / `presspop hide` | Show or hide it (`hide` starts it hidden if it isn't running) |
 | `presspop quit` | Stop it |
 | `presspop import <file>` | Merge a personal-dictionary backup from the Android app |
 | `presspop export <file>` | Save the personal dictionary as a backup |

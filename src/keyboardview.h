@@ -24,6 +24,7 @@ class KeyboardView : public QQuickPaintedItem {
     Q_PROPERTY(QColor accentForeground READ accentForeground WRITE setAccentForeground NOTIFY appearanceChanged)
     Q_PROPERTY(int radius READ radius WRITE setRadius NOTIFY appearanceChanged)
     Q_PROPERTY(qreal keysTop READ keysTop WRITE setKeysTop NOTIFY appearanceChanged)
+    Q_PROPERTY(qreal maxKeysWidth READ maxKeysWidth WRITE setMaxKeysWidth NOTIFY appearanceChanged)
     Q_PROPERTY(QString mode READ modeName NOTIFY modeChanged)
 
 public:
@@ -54,6 +55,8 @@ public:
     void setRadius(int radius);
     qreal keysTop() const { return m_keysTop; }
     void setKeysTop(qreal top);
+    qreal maxKeysWidth() const { return m_maxKeysWidth; }
+    void setMaxKeysWidth(qreal width);
     QString modeName() const;
     Mode mode() const { return m_mode; }
     void setMode(Mode mode);
@@ -82,6 +85,7 @@ private:
     void rebuild();
     void layoutKeys();
     QString labelFor(QChar c) const;
+    int px(double size) const;
     int keyAt(QPointF point) const;
     bool isLetterKey(int index) const;
 
@@ -102,6 +106,7 @@ private:
     QColor m_accent{"#FFD60A"}, m_accentForeground{"black"};
     int m_radius = 0;
     qreal m_keysTop = 0;
+    qreal m_maxKeysWidth = 0; // 0: as wide as the screen
     Mode m_mode = Mode::Letters;
     QVector<QVector<Key>> m_rows;
     QVector<PlacedKey> m_keys;

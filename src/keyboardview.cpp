@@ -124,6 +124,21 @@ void KeyboardView::setKeysTop(qreal top) {
     emit appearanceChanged();
 }
 
+void KeyboardView::setMaxKeysWidth(qreal width) {
+    if (qFuzzyCompare(width, m_maxKeysWidth))
+        return;
+    m_maxKeysWidth = width;
+    layoutKeys();
+    update();
+    emit appearanceChanged();
+}
+
+// Type sizes are designed for 60 px tall keys and follow the real height.
+int KeyboardView::px(double size) const {
+    const double keyHeight = m_keys.isEmpty() ? 60 : m_keys.first().rect.height();
+    return qRound(size * std::clamp(keyHeight / 60, .7, 1.2));
+}
+
 QString KeyboardView::modeName() const {
     switch (m_mode) {
     case Mode::Letters: return "letters";
@@ -209,7 +224,10 @@ void KeyboardView::rebuild() {
 
 void KeyboardView::layoutKeys() {
     m_keys.clear();
-    const double w = width(), h = height() - m_keysTop;
+    // On a wide landscape screen the rows stop growing and sit centered,
+    // so keys stay a comfortable size for thumbs.
+    const double w = m_maxKeysWidth > 0 ? std::min(width(), m_maxKeysWidth) : width();
+    const double offset = (width() - w) / 2, h = height() - m_keysTop;
     if (w <= 0 || h <= 0 || m_rows.isEmpty())
         return;
     const double rowHeight = (h - Gap * (m_rows.size() + 1)) / m_rows.size();
@@ -222,7 +240,7 @@ void KeyboardView::layoutKeys() {
         // The home row sits in a little, like a real keyboard's.
         const bool inset = m_mode == Mode::Letters && r == 1;
         const double rowWidth = (w - Gap * 2) * (inset ? .9 : 1);
-        double left = Gap + (inset ? (w - rowWidth) / 2 - Gap : 0);
+        double left = offset + Gap + (inset ? (w - rowWidth) / 2 - Gap : 0);
         for (const Key &k : row) {
             const double kw = rowWidth * k.weight / total - Gap;
             m_keys.push_back({k, QRectF(left, top, kw, rowHeight)});
@@ -617,7 +635,7 @@ void KeyboardView::drawKey(QPainter *painter, const PlacedKey &placed, bool pres
 
     QFont font = painter->font();
     const bool emojiPage = m_mode == Mode::Emoji && key.action == Action::Char;
-    font.setPixelSize(emojiPage ? 26 : key.label.size() > 2 ? 15 : key.action == Action::Mode ? 20 : 22);
+    font.setPixelSize(px(emojiPage ? 26 : key.label.size() > 2 ? 15 : key.action == Action::Mode ? 20 : 22));
     font.setWeight(action ? QFont::DemiBold : QFont::Normal);
     painter->setFont(font);
 
@@ -640,7 +658,7 @@ void KeyboardView::drawKey(QPainter *painter, const PlacedKey &placed, bool pres
         painter->setPen(faded);
         painter->drawText(face.translated(0, rect.height() * .65 * p), Qt::AlignCenter, key.label);
         QFont hintFont = font;
-        hintFont.setPixelSize(int(11 + 11 * p));
+        hintFont.setPixelSize(px(11 + 11 * p));
         painter->setFont(hintFont);
         painter->setPen(mix(Hint, text, p));
         const QPointF corner(face.right() - 10, face.top() + 12);
@@ -654,7 +672,7 @@ void KeyboardView::drawKey(QPainter *painter, const PlacedKey &placed, bool pres
     painter->drawText(face, Qt::AlignCenter, key.label);
     if (!hint.isEmpty()) {
         QFont hintFont = font;
-        hintFont.setPixelSize(11);
+        hintFont.setPixelSize(px(11));
         hintFont.setWeight(QFont::Normal);
         painter->setFont(hintFont);
         painter->setPen(Hint);
@@ -702,7 +720,7 @@ void KeyboardView::drawPopup(QPainter *painter) {
         painter->drawRoundedRect(row.translated(0, 3), r, r);
         painter->setBrush(PressedTop);
         painter->drawRoundedRect(row, r, r);
-        font.setPixelSize(24);
+        font.setPixelSize(px(24));
         painter->setFont(font);
         for (int i = 0; i < m_variants.size(); ++i) {
             const QRectF c(row.left() + i * cell, row.top(), cell, row.height());
@@ -754,7 +772,7 @@ void KeyboardView::drawPopup(QPainter *painter) {
     painter->drawPath(path);
 
     const bool emoji = m_mode == Mode::Emoji && placed.key.action == Action::Char;
-    font.setPixelSize(label.size() > 2 && !emoji ? 18 : emoji ? 34 : 32);
+    font.setPixelSize(px(label.size() > 2 && !emoji ? 18 : emoji ? 34 : 32));
     painter->setFont(font);
     painter->setPen(m_flick.isEmpty() ? Label : m_accent);
     painter->drawText(bubble, Qt::AlignCenter, label);

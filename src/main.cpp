@@ -103,7 +103,9 @@ int main(int argc, char *argv[]) {
             return 0;
         }
     }
-    if (command == "quit" || command == "hide")
+    // Nothing to stop. ("hide" goes on to start the keyboard hidden, which
+    // is how it waits at login for a text field.)
+    if (command == "quit")
         return 0;
     QLocalServer server;
     QLocalServer::removeServer(socketName());
