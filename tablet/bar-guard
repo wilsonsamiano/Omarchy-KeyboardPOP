@@ -1,0 +1,129 @@
+#!/usr/bin/env python3
+"""Puts back bar icons that a stray touch drags off the Omarchy bar.
+
+On a touchscreen, a tap that slides a few pixels drags a bar widget, and
+letting go below the bar removes it from ~/.config/omarchy/shell.json. A slide
+on empty bar space can also move the bar to another edge. This watches
+shell.json and undoes both, against a saved copy of the layout.
+
+  bar-guard          watch and restore (run by the bar-guard user service)
+  bar-guard save     accept the current layout, e.g. after removing a widget
+                     on purpose
+
+Widgets added or rearranged are accepted as they are and saved, so only
+removals and bar moves are undone.
+"""
+
+import copy
+import json
+import os
+import subprocess
+import sys
+import time
+
+CONFIG = os.path.expanduser("~/.config/omarchy/shell.json")
+STATE_DIR = os.path.join(os.environ.get("XDG_STATE_HOME") or os.path.expanduser("~/.local/state"), "bar-guard")
+SAVED = os.path.join(STATE_DIR, "layout.json")
+
+
+def read_json(path):
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return None
+
+
+def write_json(path, data):
+    """Writes beside the target and renames, so nothing reads half a file."""
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = path + ".bar-guard.tmp"
+    with open(tmp, "w") as f:
+        json.dump(data, f, indent=2)
+        f.write("\n")
+    os.replace(tmp, path)
+
+
+def bar_state(config):
+    bar = (config or {}).get("bar") or {}
+    return {"layout": bar.get("layout") or {}, "position": bar.get("position")}
+
+
+def ids(layout):
+    return {entry.get("id") for section in layout.values() if isinstance(section, list)
+            for entry in section if isinstance(entry, dict)}
+
+
+def save():
+    config = read_json(CONFIG)
+    if config is None:
+        print("bar-guard: can't read " + CONFIG, file=sys.stderr)
+        return 1
+    write_json(SAVED, bar_state(config))
+    print("bar-guard: saved the current bar layout")
+    return 0
+
+
+def restore_if_needed():
+    config = read_json(CONFIG)
+    saved = read_json(SAVED)
+    if config is None:
+        return
+    current = bar_state(config)
+    if saved is None:
+        write_json(SAVED, current)
+        return
+
+    missing = ids(saved["layout"]) - ids(current["layout"])
+    moved = saved.get("position") and current["position"] != saved["position"]
+    if not missing and not moved:
+        # Additions and reorders are deliberate enough to keep.
+        if current != saved:
+            write_json(SAVED, current)
+        return
+
+    bar = config.setdefault("bar", {})
+    layout = copy.deepcopy(current["layout"])
+    # Each missing widget goes back into its old section, at its old place.
+    for section, entries in saved["layout"].items():
+        if not isinstance(entries, list):
+            continue
+        for index, entry in enumerate(entries):
+            if isinstance(entry, dict) and entry.get("id") in missing:
+                target = layout.setdefault(section, [])
+                target.insert(min(index, len(target)), entry)
+    bar["layout"] = layout
+    if moved:
+        bar["position"] = saved["position"]
+    write_json(CONFIG, config)
+    what = ", ".join(sorted(missing)) + (" and the bar position" if moved else "") if missing else "the bar position"
+    print("bar-guard: restored " + what, flush=True)
+
+
+def watch():
+    restore_if_needed()
+    # shell.json is replaced on save, so watch its directory, not the file.
+    events = subprocess.Popen(
+        ["inotifywait", "-m", "-q", "-e", "close_write,moved_to", "--format", "%f",
+         os.path.dirname(CONFIG)],
+        stdout=subprocess.PIPE, text=True)
+    for name in events.stdout:
+        if name.strip() == os.path.basename(CONFIG):
+            # Let the writer finish anything it does right after saving.
+            time.sleep(0.3)
+            restore_if_needed()
+    return events.wait()
+
+
+def main():
+    args = sys.argv[1:]
+    if args == ["save"]:
+        return save()
+    if args:
+        print(__doc__.strip(), file=sys.stderr)
+        return 1
+    return watch()
+
+
+if __name__ == "__main__":
+    sys.exit(main())

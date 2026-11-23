@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "touch.control-center",
+  "name": "Control Center",
+  "version": "1.0.0",
+  "author": "Wilson Samiano",
+  "description": "iPad-style Control Center: Wi-Fi, Bluetooth, rotation lock, night light, brightness, volume, keyboard, and power",
+  "kinds": [
+    "overlay"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "overlay": "ControlCenter.qml"
+  }
+}
