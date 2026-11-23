@@ -101,6 +101,7 @@ private:
     void onLongPress();
     void onSpaceHold();
     void onDeleteRepeat();
+    bool repeats(int index) const;
     QString matchSwipe() const;
 
     void drawKey(QPainter *painter, const PlacedKey &placed, bool pressed);

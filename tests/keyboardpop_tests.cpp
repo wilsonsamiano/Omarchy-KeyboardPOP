@@ -177,6 +177,35 @@ private slots:
         }
     }
 
+    // Holding an arrow repeats it, and letting go adds no extra press.
+    void heldArrowRepeats() {
+        auto kb = keyboard();
+        QQuickWindow window;
+        window.resize(1200, 300);
+        auto *view = new KeyboardView;
+        view->setParentItem(window.contentItem());
+        view->setSize(QSizeF(1200, 300));
+        view->setBackend(&kb->backend);
+        window.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+        QPointF leftAt;
+        for (const auto &placed : view->keys())
+            if (placed.key.action == KeyboardView::Action::Control && placed.key.output == "Left")
+                leftAt = placed.rect.center();
+        QPointingDevice *device = QTest::createTouchDevice();
+
+        QTest::touchEvent(&window, device).press(0, leftAt.toPoint());
+        QTest::touchEvent(&window, device).release(0, leftAt.toPoint());
+        QCOMPARE(kb->field.combos, QStringList{"0+Left"}); // a tap is one press
+
+        QTest::touchEvent(&window, device).press(0, leftAt.toPoint());
+        QTest::qWait(700);
+        QTest::touchEvent(&window, device).release(0, leftAt.toPoint());
+        const int presses = kb->field.combos.size() - 1;
+        QVERIFY2(presses >= 3, qPrintable(QString::number(presses)));
+        QVERIFY(kb->field.combos.count("0+Left") == kb->field.combos.size());
+    }
+
     // ---- Multitouch ----
 
     // A second finger taps its own key while the first holds Delete.

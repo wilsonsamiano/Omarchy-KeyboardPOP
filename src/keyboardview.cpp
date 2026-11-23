@@ -380,7 +380,7 @@ void KeyboardView::press(QPointF point) {
         const Key &k = m_keys[m_pressed].key;
         if (k.action == Action::Space)
             m_spaceHold.start();
-        if (k.action == Action::Delete) {
+        if (repeats(m_pressed)) {
             m_deleteRepeated = false;
             m_deleteRepeat.start(450);
         }
@@ -467,7 +467,7 @@ void KeyboardView::move(QPointF point) {
     const int hit = keyAt(point);
     if (hit >= 0 && hit != m_pressed) {
         m_pressed = hit;
-        if (m_keys[hit].key.action == Action::Delete && !isLetterKey(m_downIndex)) {
+        if (repeats(hit) && !isLetterKey(m_downIndex)) {
             m_deleteRepeated = false;
             m_deleteRepeat.start(450);
         } else {
@@ -543,7 +543,11 @@ void KeyboardView::fireKey(int index, bool deleteRepeated) {
         break;
     case Action::Enter: m_backend->enter(); break;
     case Action::Modifier: m_backend->toggleModifier(key.output.toInt()); break;
-    case Action::Control: m_backend->controlKey(key.output); break;
+    case Action::Control:
+        // A held arrow already went out while it repeated.
+        if (!deleteRepeated)
+            m_backend->controlKey(key.output);
+        break;
     }
 }
 
@@ -584,13 +588,26 @@ void KeyboardView::onSpaceHold() {
     update();
 }
 
+// Delete and the arrows repeat while held, like on a hardware keyboard.
+bool KeyboardView::repeats(int index) const {
+    if (index < 0 || index >= m_keys.size())
+        return false;
+    const Key &k = m_keys[index].key;
+    return k.action == Action::Delete
+           || (k.action == Action::Control && QStringList{"Left", "Right", "Up", "Down"}.contains(k.output));
+}
+
 void KeyboardView::onDeleteRepeat() {
-    if (!m_down || m_pressed < 0 || m_keys[m_pressed].key.action != Action::Delete || !m_backend) {
+    if (!m_down || !repeats(m_pressed) || !m_backend) {
         m_deleteRepeat.stop();
         return;
     }
     m_deleteRepeated = true;
-    m_backend->backspace();
+    const Key &k = m_keys[m_pressed].key;
+    if (k.action == Action::Delete)
+        m_backend->backspace();
+    else
+        m_backend->controlKey(k.output);
     m_deleteRepeat.setInterval(60);
 }
 
