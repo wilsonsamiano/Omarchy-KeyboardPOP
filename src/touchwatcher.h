@@ -26,7 +26,7 @@ public:
     bool touchedWithin(qint64 ms) const;
 
     // Looks for touchscreens again if none were open (e.g. the udev rule
-    // was installed after PressPop started).
+    // was installed after KeyboardPOP started).
     void rescanIfNeeded();
 
 signals:

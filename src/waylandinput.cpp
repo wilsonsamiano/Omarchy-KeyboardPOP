@@ -47,7 +47,7 @@ WaylandInput::WaylandInput(wl_display *display, QObject *parent) : QObject(paren
     m_registry = wl_display_get_registry(m_display);
     wl_registry_add_listener(m_registry, &registryListener, this);
     // Every global is announced before this sync answers, so its callback
-    // is where the protocols PressPop needs are known to be there or not.
+    // is where the protocols KeyboardPOP needs are known to be there or not.
     static const wl_callback_listener syncListener = {LISTENER(syncDone)};
     m_sync = wl_display_sync(m_display);
     wl_callback_add_listener(m_sync, &syncListener, this);
@@ -367,14 +367,14 @@ void WaylandInput::uploadKeymap() {
     if (control >= 0)
         symbols += QByteArray("    modifier_map Control { <K") + QByteArray::number(control) + "> };\n";
     const QByteArray keymap = "xkb_keymap {\n"
-                              "  xkb_keycodes \"presspop\" {\n    minimum = 8;\n    maximum = 255;\n"
+                              "  xkb_keycodes \"keyboardpop\" {\n    minimum = 8;\n    maximum = 255;\n"
                               + keycodes + "  };\n"
-                              "  xkb_types \"presspop\" { include \"complete\" };\n"
-                              "  xkb_compatibility \"presspop\" { include \"complete\" };\n"
-                              "  xkb_symbols \"presspop\" {\n" + symbols + "  };\n"
+                              "  xkb_types \"keyboardpop\" { include \"complete\" };\n"
+                              "  xkb_compatibility \"keyboardpop\" { include \"complete\" };\n"
+                              "  xkb_symbols \"keyboardpop\" {\n" + symbols + "  };\n"
                               "};\n";
 
-    const int fd = memfd_create("presspop-keymap", MFD_CLOEXEC);
+    const int fd = memfd_create("keyboardpop-keymap", MFD_CLOEXEC);
     if (fd < 0)
         return;
     const size_t size = size_t(keymap.size()) + 1; // with its terminating NUL

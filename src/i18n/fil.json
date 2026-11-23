@@ -1,6 +1,6 @@
 {
   "space": "espasyo",
-  "PressPop opens by itself when you tap a text field.": "Kusang bumubukas ang PressPop kapag nag-tap ka ng text field.",
-  "Typing into the focused window. Another input method (like fcitx5) is running, so PressPop can't open by itself on text fields.": "Nagta-type sa naka-focus na window. May ibang input method (gaya ng fcitx5) na tumatakbo, kaya hindi kusang makabubukas ang PressPop sa mga text field.",
-  "This compositor has no virtual keyboard support, so PressPop can't type.": "Walang suporta sa virtual keyboard ang compositor na ito, kaya hindi makapag-type ang PressPop."
+  "KeyboardPOP opens by itself when you tap a text field.": "Kusang bumubukas ang KeyboardPOP kapag nag-tap ka ng text field.",
+  "Typing into the focused window. Another input method (like fcitx5) is running, so KeyboardPOP can't open by itself on text fields.": "Nagta-type sa naka-focus na window. May ibang input method (gaya ng fcitx5) na tumatakbo, kaya hindi kusang makabubukas ang KeyboardPOP sa mga text field.",
+  "This compositor has no virtual keyboard support, so KeyboardPOP can't type.": "Walang suporta sa virtual keyboard ang compositor na ito, kaya hindi makapag-type ang KeyboardPOP."
 }

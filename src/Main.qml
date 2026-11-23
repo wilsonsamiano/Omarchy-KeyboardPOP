@@ -2,14 +2,14 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Window
-import PressPop
+import KeyboardPOP
 
 // The keyboard never takes keyboard focus, so it has no shortcuts of its
 // own: every control is a touch target.
 ApplicationWindow {
     id: win
     visible: false
-    title: "PressPop"
+    title: "KeyboardPOP"
     width: Screen.width
     height: stripHeight + Math.round(Math.min(260, Math.max(170, Screen.height * 0.25)))
     color: "#151517"
@@ -24,7 +24,7 @@ ApplicationWindow {
     readonly property color mutedColor: "#8e8e93"
     property bool statusVisible: false
 
-    // The status (how PressPop is typing, or what's wrong) shows for a
+    // The status (how KeyboardPOP is typing, or what's wrong) shows for a
     // moment whenever it changes, and again from the info button.
     Connections {
         target: backend

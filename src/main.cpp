@@ -1,4 +1,4 @@
-// PressPop — a touch keyboard for Omarchy with key popups and swipe typing.
+// KeyboardPOP — a touch keyboard for Omarchy with key popups and swipe typing.
 
 #include <QElapsedTimer>
 #include <QFile>
@@ -29,7 +29,7 @@
 namespace {
 
 const char *Usage =
-    "Usage: presspop [command]\n"
+    "Usage: keyboardpop [command]\n"
     "\n"
     "Commands:\n"
     "  toggle   Show the keyboard, or hide it if it's showing (the default)\n"
@@ -40,13 +40,13 @@ const char *Usage =
     "  export <file>  Save the personal dictionary as a backup\n";
 
 QString socketName() {
-    return QStringLiteral("presspop-%1").arg(getuid());
+    return QStringLiteral("keyboardpop-%1").arg(getuid());
 }
 
 int dictionaryCommand(const QString &command, const QString &path) {
     QTextStream err(stderr);
     if (path.isEmpty()) {
-        err << "presspop " << command << ": a file is needed\n";
+        err << "keyboardpop " << command << ": a file is needed\n";
         return 1;
     }
     Dictionary dictionary;
@@ -54,14 +54,14 @@ int dictionaryCommand(const QString &command, const QString &path) {
     if (command == "export") {
         QFile file(path);
         if (!file.open(QIODevice::WriteOnly) || file.write(personal.exportJson()) < 0) {
-            err << "presspop export: can't write " << path << "\n";
+            err << "keyboardpop export: can't write " << path << "\n";
             return 1;
         }
         return 0;
     }
     QFile file(path);
     if (!file.open(QIODevice::ReadOnly)) {
-        err << "presspop import: can't read " << path << "\n";
+        err << "keyboardpop import: can't read " << path << "\n";
         return 1;
     }
     const int added = personal.importJson(file.readAll());
@@ -83,11 +83,11 @@ int main(int argc, char *argv[]) {
     const bool offscreen = qgetenv("QT_QPA_PLATFORM") == "offscreen";
 
     QGuiApplication app(argc, argv);
-    app.setApplicationName("presspop");
-    app.setOrganizationName("presspop");
+    app.setApplicationName("keyboardpop");
+    app.setOrganizationName("keyboardpop");
     app.setApplicationVersion("0.1.0");
-    app.setDesktopFileName("presspop");
-    app.setWindowIcon(QIcon::fromTheme("presspop"));
+    app.setDesktopFileName("keyboardpop");
+    app.setWindowIcon(QIcon::fromTheme("keyboardpop"));
     app.setQuitOnLastWindowClosed(false);
 
     if (command == "import" || command == "export")
@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
     QLocalServer server;
     QLocalServer::removeServer(socketName());
     if (!server.listen(socketName())) {
-        QTextStream(stderr) << "presspop: can't listen on " << socketName() << ": " << server.errorString() << "\n";
+        QTextStream(stderr) << "keyboardpop: can't listen on " << socketName() << ": " << server.errorString() << "\n";
         return 1;
     }
 
@@ -137,14 +137,14 @@ int main(int argc, char *argv[]) {
         case WaylandInput::Mode::Connecting:
             break;
         case WaylandInput::Mode::InputMethod:
-            backend.setStatus(QObject::tr("PressPop opens by itself when you tap a text field."));
+            backend.setStatus(QObject::tr("KeyboardPOP opens by itself when you tap a text field."));
             break;
         case WaylandInput::Mode::VirtualKeyboard:
             backend.setStatus(QObject::tr("Typing into the focused window. Another input method (like fcitx5) is "
-                                          "running, so PressPop can't open by itself on text fields."));
+                                          "running, so KeyboardPOP can't open by itself on text fields."));
             break;
         case WaylandInput::Mode::Unavailable:
-            backend.setStatus(QObject::tr("This compositor has no virtual keyboard support, so PressPop can't type."),
+            backend.setStatus(QObject::tr("This compositor has no virtual keyboard support, so KeyboardPOP can't type."),
                               true);
             break;
         }
@@ -153,8 +153,8 @@ int main(int argc, char *argv[]) {
     QObject::connect(&translator, &Translator::changed, updateStatus);
     updateStatus();
 
-    qmlRegisterType<KeyboardView>("PressPop", 1, 0, "KeyboardView");
-    qmlRegisterUncreatableType<Backend>("PressPop", 1, 0, "Backend", "The app provides the backend");
+    qmlRegisterType<KeyboardView>("KeyboardPOP", 1, 0, "KeyboardView");
+    qmlRegisterUncreatableType<Backend>("KeyboardPOP", 1, 0, "Backend", "The app provides the backend");
 
     QQmlApplicationEngine engine;
     QObject::connect(&translator, &Translator::changed, &engine, &QQmlEngine::retranslate);
@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
         layer->setAnchors({LayerShellQt::Window::AnchorBottom, LayerShellQt::Window::AnchorLeft,
                            LayerShellQt::Window::AnchorRight});
         layer->setKeyboardInteractivity(LayerShellQt::Window::KeyboardInteractivityNone);
-        layer->setScope("presspop");
+        layer->setScope("keyboardpop");
         // Windows make room for the keyboard instead of hiding under it.
         layer->setExclusiveZone(window->height());
         QObject::connect(window, &QWindow::heightChanged, layer, [layer](int h) { layer->setExclusiveZone(h); });

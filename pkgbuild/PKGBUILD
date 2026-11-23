@@ -1,10 +1,13 @@
-pkgname=presspop
+pkgname=keyboardpop
 pkgver=0.1.0
-pkgrel=4
+pkgrel=1
 pkgdesc='Touch keyboard for Omarchy with key popups, swipe typing, and suggestions'
 arch=('x86_64' 'aarch64')
 license=('MIT')
 depends=('qt6-base' 'qt6-declarative' 'qt6-wayland' 'layer-shell-qt' 'wayland' 'libxkbcommon')
+provides=('presspop')
+conflicts=('presspop')
+replaces=('presspop')
 makedepends=('gcc' 'make')
 source=()
 sha256sums=()
@@ -16,9 +19,9 @@ build() {
 
 package() {
   cd "$startdir/.."
-  install -Dm755 build/presspop "$pkgdir/usr/bin/presspop"
+  install -Dm755 build/keyboardpop "$pkgdir/usr/bin/keyboardpop"
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
-  install -Dm644 "$startdir/presspop.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/presspop.svg"
-  install -Dm644 "$startdir/presspop.desktop" "$pkgdir/usr/share/applications/presspop.desktop"
-  install -Dm644 "$startdir/70-presspop-touchscreen.rules" "$pkgdir/usr/lib/udev/rules.d/70-presspop-touchscreen.rules"
+  install -Dm644 "$startdir/keyboardpop.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/keyboardpop.svg"
+  install -Dm644 "$startdir/keyboardpop.desktop" "$pkgdir/usr/share/applications/keyboardpop.desktop"
+  install -Dm644 "$startdir/70-keyboardpop-touchscreen.rules" "$pkgdir/usr/lib/udev/rules.d/70-keyboardpop-touchscreen.rules"
 }

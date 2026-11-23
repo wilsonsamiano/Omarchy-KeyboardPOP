@@ -33,7 +33,7 @@ public:
     bool isPassword() const override { return secret; }
 };
 
-class PresspopTests : public QObject {
+class KeyboardpopTests : public QObject {
     Q_OBJECT
 
     // The dictionary takes a moment to load, so tests share one.
@@ -380,5 +380,5 @@ private:
     }
 };
 
-QTEST_MAIN(PresspopTests)
-#include "presspop_tests.moc"
+QTEST_MAIN(KeyboardpopTests)
+#include "keyboardpop_tests.moc"

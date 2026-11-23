@@ -23,7 +23,7 @@ bool allLetters(const QString &word) {
 Personal::Personal(const Dictionary &dictionary, const QString &path, QObject *parent)
     : QObject(parent), m_dictionary(dictionary),
       m_path(path.isEmpty() ? QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation)
-                                  + "/presspop/personal.json"
+                                  + "/keyboardpop/personal.json"
                             : path) {
     // Learning happens on every Space, so writes are batched a few seconds.
     m_saveTimer.setSingleShot(true);

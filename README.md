@@ -1,6 +1,6 @@
-# PressPop for Omarchy
+# KeyboardPOP for Omarchy
 
-![PressPop with the popup bubble over the g key and next-word suggestions](docs/screenshot.png)
+![KeyboardPOP with the popup bubble over the g key and next-word suggestions](docs/screenshot.png)
 
 A touch keyboard for Omarchy tablets like the Surface Go, ported from the
 [PressPop / SafePop Android keyboard](https://github.com/wilsonsamiano/presspop-keyboard).
@@ -16,7 +16,7 @@ Setup > Language.
   against the dictionary (your own words first), with a trail in the accent
   color.
 - **Suggestions.** The strip shows completions while you type and the
-  likely next word between words (from your own sentences, then PressPop's
+  likely next word between words (from your own sentences, then KeyboardPOP's
   phrase model). On Space, a word that isn't in the dictionary gets its
   closest word offered in the middle slot: tap it to fix the word, tap the
   word as you typed it to keep it.
@@ -44,38 +44,38 @@ Everything runs on this machine; nothing is sent anywhere.
 
 ## Showing and hiding
 
-Tap **PressPop** in the app launcher (`Super + Space`) to show the keyboard,
+Tap **KeyboardPOP** in the app launcher (`Super + Space`) to show the keyboard,
 and again to hide it; the chevron at the right of the strip hides it too.
 Windows make room above it instead of being covered.
 
-To open and close it with a key, bind `presspop toggle` in
+To open and close it with a key, bind `keyboardpop toggle` in
 `~/.config/hypr/bindings.lua`:
 
 ```lua
-o.bind("SUPER + CTRL + Y", "Touch keyboard", "presspop toggle")
+o.bind("SUPER + CTRL + Y", "Touch keyboard", "keyboardpop toggle")
 ```
 
 ### Opening by itself on text fields
 
-PressPop can open whenever a text field is focused, and then it also knows
+KeyboardPOP can open whenever a text field is focused, and then it also knows
 the text around the cursor and turns off suggestions in password fields.
-That needs PressPop to be the seat's **input method**, and Wayland allows
+That needs KeyboardPOP to be the seat's **input method**, and Wayland allows
 only one. Omarchy runs **fcitx5** as the input method (for compose keys,
-emoji picking, and Asian scripts), so while fcitx5 is running PressPop types
+emoji picking, and Asian scripts), so while fcitx5 is running KeyboardPOP types
 as a virtual keyboard instead: it works in every app, but you show and hide
 it yourself. The ⓘ in the strip says which way it's typing.
 
-Without fcitx5, start PressPop with the session, hidden, in
+Without fcitx5, start KeyboardPOP with the session, hidden, in
 `~/.config/hypr/autostart.lua`, and it will come and go with text fields:
 
 ```lua
-o.launch_on_start("presspop hide")
+o.launch_on_start("keyboardpop hide")
 ```
 
 It only pops up when you tap a field with your finger; clicking one with
-the mouse or tabbing to it leaves it hidden. To tell the two apart PressPop
+the mouse or tabbing to it leaves it hidden. To tell the two apart KeyboardPOP
 reads the touchscreen, which the package's udev rule
-(`/usr/lib/udev/rules.d/70-presspop-touchscreen.rules`) lets the logged-in
+(`/usr/lib/udev/rules.d/70-keyboardpop-touchscreen.rules`) lets the logged-in
 user do for touchscreens only. Without that access it pops up on every
 focused field.
 
@@ -83,13 +83,13 @@ focused field.
 
 | Command | |
 |---|---|
-| `presspop` / `presspop toggle` | Show the keyboard, or hide it if it's showing |
-| `presspop show` / `presspop hide` | Show or hide it (`hide` starts it hidden if it isn't running) |
-| `presspop quit` | Stop it |
-| `presspop import <file>` | Merge a personal-dictionary backup from the Android app |
-| `presspop export <file>` | Save the personal dictionary as a backup |
+| `keyboardpop` / `keyboardpop toggle` | Show the keyboard, or hide it if it's showing |
+| `keyboardpop show` / `keyboardpop hide` | Show or hide it (`hide` starts it hidden if it isn't running) |
+| `keyboardpop quit` | Stop it |
+| `keyboardpop import <file>` | Merge a personal-dictionary backup from the Android app |
+| `keyboardpop export <file>` | Save the personal dictionary as a backup |
 
-The personal dictionary lives in `~/.local/share/presspop/personal.json`,
+The personal dictionary lives in `~/.local/share/keyboardpop/personal.json`,
 in the same format the Android app exports, so the two can share words.
 
 The keyboard never takes keyboard focus away from the app you're typing in,
@@ -99,7 +99,7 @@ touch target.
 ## Build
 
 ```sh
-bin/build      # qmake6 + make into build/presspop
+bin/build      # qmake6 + make into build/keyboardpop
 bin/test       # the Qt Test suite, offscreen
 bin/install    # makepkg -fsi, so it shows up in the app launcher
 ```

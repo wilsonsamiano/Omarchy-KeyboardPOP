@@ -15,7 +15,7 @@ struct zwp_input_method_v2;
 struct zwp_virtual_keyboard_manager_v1;
 struct zwp_virtual_keyboard_v1;
 
-// Types into other apps over Wayland. When PressPop is the seat's input
+// Types into other apps over Wayland. When KeyboardPOP is the seat's input
 // method (input-method-unstable-v2) it learns when a text field is focused,
 // what is around the cursor, and whether the field is a password, and it
 // commits text straight into the field. Only one input method can hold a

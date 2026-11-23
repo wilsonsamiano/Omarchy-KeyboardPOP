@@ -1,7 +1,7 @@
 QT += core gui qml quick quickcontrols2 network
 
 CONFIG += c++17 release link_pkgconfig
-TARGET = presspop
+TARGET = keyboardpop
 TEMPLATE = app
 
 PKGCONFIG += wayland-client xkbcommon

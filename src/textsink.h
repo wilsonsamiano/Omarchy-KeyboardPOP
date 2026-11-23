@@ -4,7 +4,7 @@
 #include <optional>
 
 // Where typed text goes. On the desktop that is Wayland (the input-method
-// protocol when PressPop is the input method, otherwise a virtual keyboard);
+// protocol when KeyboardPOP is the input method, otherwise a virtual keyboard);
 // in tests it is a string.
 class TextSink {
 public:

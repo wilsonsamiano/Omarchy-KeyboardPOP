@@ -1,6 +1,6 @@
 {
   "space": "espaço",
-  "PressPop opens by itself when you tap a text field.": "O PressPop abre sozinho quando toca num campo de texto.",
-  "Typing into the focused window. Another input method (like fcitx5) is running, so PressPop can't open by itself on text fields.": "A escrever na janela ativa. Outro método de entrada (como o fcitx5) está em execução, por isso o PressPop não abre sozinho nos campos de texto.",
-  "This compositor has no virtual keyboard support, so PressPop can't type.": "Este compositor não suporta teclados virtuais, por isso o PressPop não consegue escrever."
+  "KeyboardPOP opens by itself when you tap a text field.": "O KeyboardPOP abre sozinho quando toca num campo de texto.",
+  "Typing into the focused window. Another input method (like fcitx5) is running, so KeyboardPOP can't open by itself on text fields.": "A escrever na janela ativa. Outro método de entrada (como o fcitx5) está em execução, por isso o KeyboardPOP não abre sozinho nos campos de texto.",
+  "This compositor has no virtual keyboard support, so KeyboardPOP can't type.": "Este compositor não suporta teclados virtuais, por isso o KeyboardPOP não consegue escrever."
 }
