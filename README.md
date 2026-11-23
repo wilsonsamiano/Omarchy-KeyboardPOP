@@ -130,8 +130,9 @@ written to `~/.local/state/autorotate/status` for a bar widget to show.
 
 **`touchswipe`** adds iPad-style touchscreen gestures:
 
-- A quick one-finger swipe switches desktops: left to right for the next
-  desktop, right to left for the previous one. It has to be a flick, so slow drags like selecting text don't
+- A quick one-finger swipe switches desktops the iPad way: the desktops
+  follow your finger, so right to left brings in the next desktop and left
+  to right goes back. It has to be a flick, so slow drags like selecting text don't
   count, and swipes on the on-screen keyboard are left alone.
 - Four fingers swiped left or right do the same.
 - A swipe up from the bottom edge opens the Omarchy menu (Super + Space).
@@ -150,8 +151,8 @@ function desktop_step(step)
     hl.dispatch(hl.dsp.focus({ workspace = tostring(target) }))
   end
 end
-hl.gesture({ fingers = 4, direction = "right", action = function() desktop_step(1) end })
-hl.gesture({ fingers = 4, direction = "left", action = function() desktop_step(-1) end })
+hl.gesture({ fingers = 4, direction = "left", action = function() desktop_step(1) end })
+hl.gesture({ fingers = 4, direction = "right", action = function() desktop_step(-1) end })
 ```
 
 ## Commands
