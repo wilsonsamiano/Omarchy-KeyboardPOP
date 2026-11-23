@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "touch.gesture-feedback",
+  "name": "Gesture feedback",
+  "version": "1.0.0",
+  "author": "Wilson Samiano",
+  "description": "Brief, lightweight animations confirming touch gestures, like iPad's page dots when switching desktops",
+  "kinds": [
+    "service"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "service": "Feedback.qml"
+  }
+}

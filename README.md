@@ -153,6 +153,8 @@ function desktop_step(step)
   if target ~= current then
     hl.dispatch(hl.dsp.focus({ workspace = tostring(target) }))
   end
+  -- Page dots at the bottom (tablet/gesture-feedback); they nudge at the ends.
+  hl.exec_cmd("omarchy-shell gesture desktop " .. target .. " 5 " .. (target == current and 1 or 0))
 end
 hl.gesture({ fingers = 4, direction = "left", action = function() desktop_step(1) end })
 hl.gesture({ fingers = 4, direction = "right", action = function() desktop_step(-1) end })
@@ -170,6 +172,13 @@ omarchy plugin enable touch.app-switcher
 
 `omarchy-shell shell summon touch.app-switcher` opens it, which you can
 also bind to a key.
+
+**Gesture feedback** (`tablet/gesture-feedback`) shows iPad-style page dots
+at the bottom of the screen when a swipe switches desktops, and nudges them
+when a swipe runs into the first or last desktop. Its window only exists
+while the dots are showing, and touches pass through it. Install it like the
+app switcher (`omarchy plugin enable touch.gesture-feedback`); the
+`desktop_step` function above triggers it.
 
 ## Commands
 
