@@ -1,0 +1,131 @@
+#!/usr/bin/env python3
+"""Four-finger swipes on the touchscreen switch desktops, like an iPad.
+
+Swipe four fingers left for the next desktop, right for the previous one.
+Hyprland only does gestures on touchpads, so this reads the touchscreen
+itself (the KeyboardPOP udev rule lets the logged-in user read it) and calls
+desktop_step from ~/.config/hypr/input.lua. It follows auto-rotation through
+the state file autorotate writes, so "left" is always the
+screen's left. Started hidden at login from ~/.config/hypr/autostart.lua.
+"""
+
+import fcntl
+import glob
+import os
+import struct
+import subprocess
+import sys
+import time
+
+EV_SYN, EV_ABS = 0, 3
+SYN_REPORT = 0
+ABS_MT_SLOT, ABS_MT_POSITION_X, ABS_MT_POSITION_Y, ABS_MT_TRACKING_ID = 0x2F, 0x35, 0x36, 0x39
+EVENT = struct.Struct("llHHi")
+
+FINGERS = 4
+# A swipe crosses at least this much of the screen, mostly sideways.
+MIN_TRAVEL = 0.15
+SIDEWAYS = 1.5
+
+STATE = os.path.join(os.environ.get("XDG_STATE_HOME", os.path.expanduser("~/.local/state")), "autorotate", "transform")
+
+
+def abs_range(fd, code):
+    # EVIOCGABS(code): struct input_absinfo is six ints.
+    request = (2 << 30) | (24 << 16) | (ord("E") << 8) | (0x40 + code)
+    info = struct.unpack("6i", fcntl.ioctl(fd, request, bytes(24)))
+    return info[1], info[2]  # minimum, maximum
+
+
+def find_touchscreen():
+    for path in sorted(glob.glob("/dev/input/event*")):
+        try:
+            rdev = os.stat(path).st_rdev
+            with open(f"/run/udev/data/c{os.major(rdev)}:{os.minor(rdev)}") as db:
+                if "E:ID_INPUT_TOUCHSCREEN=1\n" in db.read():
+                    return path
+        except OSError:
+            continue
+    return None
+
+
+def rotation():
+    try:
+        with open(STATE) as f:
+            return int(f.read().strip() or 0)
+    except (OSError, ValueError):
+        return 0
+
+
+def sideways(dx, dy):
+    """The swipe's sideways travel on screen, from panel travel."""
+    return {0: dx, 1: dy, 2: -dx, 3: -dy}[rotation() % 4], {0: dy, 1: dx, 2: dy, 3: dx}[rotation() % 4]
+
+
+def step(direction):
+    subprocess.run(["hyprctl", "eval", f"desktop_step({direction})"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def watch(path):
+    fd = os.open(path, os.O_RDONLY)
+    try:
+        xmin, xmax = abs_range(fd, ABS_MT_POSITION_X)
+        ymin, ymax = abs_range(fd, ABS_MT_POSITION_Y)
+        width, height = max(1, xmax - xmin), max(1, ymax - ymin)
+        slot = 0
+        touches = {}  # slot -> [x, y]
+        start = last = None
+        while True:
+            data = os.read(fd, EVENT.size * 64)
+            if not data:
+                return
+            for i in range(0, len(data) - EVENT.size + 1, EVENT.size):
+                _, _, kind, code, value = EVENT.unpack_from(data, i)
+                if kind == EV_ABS:
+                    if code == ABS_MT_SLOT:
+                        slot = value
+                    elif code == ABS_MT_TRACKING_ID:
+                        if value < 0:
+                            touches.pop(slot, None)
+                        else:
+                            touches[slot] = [None, None]
+                    elif code == ABS_MT_POSITION_X and slot in touches:
+                        touches[slot][0] = (value - xmin) / width
+                    elif code == ABS_MT_POSITION_Y and slot in touches:
+                        touches[slot][1] = (value - ymin) / height
+                elif kind == EV_SYN and code == SYN_REPORT:
+                    placed = [t for t in touches.values() if None not in t]
+                    if placed:
+                        centre = (sum(t[0] for t in placed) / len(placed), sum(t[1] for t in placed) / len(placed))
+                    if start is None and len(placed) >= FINGERS:
+                        start = last = centre
+                    elif start is not None and len(placed) >= FINGERS - 1:
+                        # Fingers lift one at a time; follow while most are down.
+                        last = centre
+                    if start is not None and not touches:
+                        across, along = sideways(last[0] - start[0], last[1] - start[1])
+                        if abs(across) >= MIN_TRAVEL and abs(across) >= SIDEWAYS * abs(along):
+                            # Fingers moving left bring the next desktop in.
+                            step(1 if across < 0 else -1)
+                        start = last = None
+    finally:
+        os.close(fd)
+
+
+def main():
+    # The touchscreen can vanish across suspend; wait for it and carry on.
+    while True:
+        path = find_touchscreen()
+        if path:
+            try:
+                watch(path)
+            except OSError:
+                pass
+        time.sleep(2)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        sys.exit(0)

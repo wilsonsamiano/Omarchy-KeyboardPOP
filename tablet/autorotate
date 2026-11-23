@@ -1,0 +1,89 @@
+#!/bin/bash
+# Rotates the built-in screen, touchscreen, and pen to match how the tablet
+# is held, like an iPad. Reads the accelerometer through iio-sensor-proxy.
+#
+#   autorotate              follow the sensor (started hidden at login)
+#   autorotate lock         toggle rotation lock (keeps the current rotation)
+#   autorotate status       print "locked" or "unlocked"
+#   autorotate reapply      put the rotation back after a Hyprland reload
+#
+# Rotation lock lives in a file, so it survives restarts.
+
+# The built-in screen (eDP, or LVDS on older machines), at the scale it
+# already has, so rotating never changes its size.
+read -r OUTPUT SCALE < <(hyprctl monitors -j | jq -r '[.[] | select(.name | test("^(eDP|LVDS)"))][0] | "\(.name) \(.scale)"')
+[[ -n $OUTPUT && $OUTPUT != null ]] || { echo "autorotate: no built-in screen found" >&2; exit 1; }
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}/autorotate"
+LOCK="$STATE/locked"
+mkdir -p "$STATE"
+
+apply() {
+  local t=$1
+  hyprctl --batch "eval hl.monitor({ output = \"$OUTPUT\", mode = \"preferred\", position = \"auto\", scale = $SCALE, transform = $t }) ; eval hl.config({ input = { touchdevice = { transform = $t }, tablet = { transform = $t } } })" >/dev/null
+  echo "$t" > "$STATE/transform"
+}
+
+case "${1:-}" in
+  lock)
+    if [[ -e $LOCK ]]; then
+      rm -f "$LOCK"
+      echo unlocked > "$STATE/status"
+      notify-send -t 1500 -i rotation-allowed-symbolic "Rotation unlocked"
+      # Catch up with how the tablet is held now.
+      orientation=$(cat "$STATE/orientation" 2>/dev/null)
+    else
+      touch "$LOCK"
+      echo locked > "$STATE/status"
+      notify-send -t 1500 -i rotation-locked-symbolic "Rotation locked"
+      exit 0
+    fi
+    ;;
+  reapply)
+    t=$(cat "$STATE/transform" 2>/dev/null)
+    current=$(hyprctl monitors -j | jq -r ".[] | select(.name == \"$OUTPUT\") | .transform")
+    [[ -n $t && $t != "$current" ]] && apply "$t"
+    exit 0
+    ;;
+  status)
+    [[ -e $LOCK ]] && echo locked || echo unlocked
+    exit 0
+    ;;
+  "")
+    # Only one follower at a time.
+    exec 9>"$STATE/run.lock"
+    flock -n 9 || exit 0
+    # The screen starts upright after login, so apply the first reading.
+    rm -f "$STATE/transform"
+    # The bar's rotation-lock button reads this.
+    [[ -e $LOCK ]] && echo locked > "$STATE/status" || echo unlocked > "$STATE/status"
+    ;;
+  *)
+    echo "Usage: autorotate [lock|status|reapply]" >&2
+    exit 1
+    ;;
+esac
+
+transform_for() {
+  case $1 in
+    normal) echo 0 ;;
+    left-up) echo 1 ;;
+    bottom-up) echo 2 ;;
+    right-up) echo 3 ;;
+  esac
+}
+
+if [[ ${1:-} == lock ]]; then
+  t=$(transform_for "$orientation")
+  [[ -n $t ]] && apply "$t"
+  exit 0
+fi
+
+stdbuf -oL monitor-sensor --accel | while read -r line; do
+  [[ $line =~ orientation\ changed:\ ([a-z-]+) ]] || [[ $line =~ \(orientation:\ ([a-z-]+) ]] || continue
+  orientation=${BASH_REMATCH[1]}
+  echo "$orientation" > "$STATE/orientation"
+  t=$(transform_for "$orientation")
+  [[ -z $t || -e $LOCK ]] && continue
+  [[ $(cat "$STATE/transform" 2>/dev/null) == "$t" ]] && continue
+  apply "$t"
+done

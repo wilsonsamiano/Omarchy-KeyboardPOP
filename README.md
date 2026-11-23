@@ -98,6 +98,52 @@ hl.on("input.keyboard.key", function(_, _, pressed)
 end)
 ```
 
+## Tablet extras
+
+Two small tools ship alongside the keyboard to make an Omarchy tablet feel
+more like an iPad. Start both with the session in
+`~/.config/hypr/autostart.lua`:
+
+```lua
+o.launch_on_start("autorotate")
+hl.on("config.reloaded", function()
+  hl.exec_cmd("autorotate reapply")
+end)
+o.launch_on_start("touchswipe")
+```
+
+**`autorotate`** turns the built-in screen, touchscreen, and pen to match
+how the tablet is held, reading the accelerometer through
+`iio-sensor-proxy` (`sudo pacman -S iio-sensor-proxy`).
+`autorotate lock` toggles rotation lock; bind it to a key if you like:
+
+```lua
+o.bind("SUPER + CTRL + U", "Rotation lock", "autorotate lock")
+```
+
+The `config.reloaded` hook puts the rotation back after a Hyprland reload,
+which would otherwise reset the screen to upright. The lock state is
+written to `~/.local/state/autorotate/status` for a bar widget to show.
+
+**`touchswipe`** switches desktops with four-finger swipes on the
+touchscreen: left for the next desktop, right for the previous one. Hyprland
+only does gestures on touchpads, so it reads the touchscreen (through the
+same udev rule as the keyboard) and follows `autorotate`'s rotation. It calls
+a `desktop_step` function that goes in `~/.config/hypr/input.lua`, along with
+the same swipe on the touchpad:
+
+```lua
+function desktop_step(step)
+  local current = hl.get_active_workspace().id
+  local target = math.max(1, math.min(5, current + step))
+  if target ~= current then
+    hl.dispatch(hl.dsp.focus({ workspace = tostring(target) }))
+  end
+end
+hl.gesture({ fingers = 4, direction = "left", action = function() desktop_step(1) end })
+hl.gesture({ fingers = 4, direction = "right", action = function() desktop_step(-1) end })
+```
+
 ## Commands
 
 | Command | |
