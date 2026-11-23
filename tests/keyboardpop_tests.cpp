@@ -1,6 +1,7 @@
 #include <QDir>
 #include <QFile>
 #include <QTemporaryDir>
+#include <QQuickWindow>
 #include <QtTest>
 
 #include "backend.h"
@@ -122,6 +123,41 @@ private slots:
     }
 
     // ---- Swipe ----
+
+    // ---- Multitouch ----
+
+    // A second finger taps its own key while the first holds Delete.
+    void secondFingerTapsWhileDeleteRepeats() {
+        auto kb = keyboard();
+        kb->field.text = "hello world, this is long";
+        QQuickWindow window;
+        window.resize(1200, 300);
+        auto *view = new KeyboardView;
+        view->setParentItem(window.contentItem());
+        view->setSize(QSizeF(1200, 300));
+        view->setBackend(&kb->backend);
+        window.show();
+        QVERIFY(QTest::qWaitForWindowExposed(&window));
+
+        QPointF deleteAt, enterAt;
+        for (const auto &placed : view->keys()) {
+            if (placed.key.action == KeyboardView::Action::Delete)
+                deleteAt = placed.rect.center();
+            if (placed.key.action == KeyboardView::Action::Enter)
+                enterAt = placed.rect.center();
+        }
+        QVERIFY(!deleteAt.isNull() && !enterAt.isNull());
+
+        QPointingDevice *device = QTest::createTouchDevice();
+        QTest::touchEvent(&window, device).press(0, deleteAt.toPoint());
+        QTest::qWait(700); // Delete starts repeating
+        const QString afterRepeat = kb->field.text;
+        QVERIFY(afterRepeat.size() < 25);
+        QTest::touchEvent(&window, device).stationary(0).press(1, enterAt.toPoint());
+        QTest::touchEvent(&window, device).stationary(0).release(1, enterAt.toPoint());
+        QVERIFY(kb->field.text.contains('\n'));
+        QTest::touchEvent(&window, device).release(0, deleteAt.toPoint());
+    }
 
     void matchesGlideShapes() {
         KeyboardView view;

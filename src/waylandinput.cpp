@@ -340,6 +340,7 @@ void WaylandInput::pressKeysym(uint32_t keysym, bool control) {
         return;
     const int keycode = keycodeFor(keysym);
     const uint32_t time = uint32_t(m_clock.elapsed());
+    m_lastKey.start();
     if (control)
         zwp_virtual_keyboard_v1_modifiers(m_vk, ControlMask, 0, 0, 0);
     // The protocol takes evdev codes, which are XKB keycodes minus 8.

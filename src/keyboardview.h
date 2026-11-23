@@ -2,6 +2,7 @@
 
 #include <QColor>
 #include <QElapsedTimer>
+#include <QHash>
 #include <QPointer>
 #include <QQuickPaintedItem>
 #include <QRectF>
@@ -92,6 +93,8 @@ private:
     void press(QPointF point);
     void move(QPointF point);
     void release(QPointF point, bool cancelled = false);
+    // Does what the key at `index` does when tapped.
+    void fireKey(int index, bool deleteRepeated = false);
     void resetGesture();
     void onLongPress();
     void onSpaceHold();
@@ -115,6 +118,9 @@ private:
     QElapsedTimer m_clock;
     bool m_down = false;
     int m_touchId = -1;
+    // Fingers that landed while another was busy (holding Delete, gliding):
+    // each is a plain tap on the key it landed on, fired when it lifts.
+    QHash<int, int> m_extraTouches;
     int m_pressed = -1;
     int m_downIndex = -1;
     QPointF m_downPoint, m_lastPoint;

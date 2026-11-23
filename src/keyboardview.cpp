@@ -307,8 +307,16 @@ void KeyboardView::touchEvent(QTouchEvent *event) {
                 // keeps the finger it started with.
                 const bool simpleTap = m_visited.size() <= 1 && !m_variantMode && !m_cursorMode && m_flick.isEmpty()
                                        && !m_deleteRepeated && distance(m_lastPoint, m_downPoint) < 20;
-                if (!simpleTap)
+                if (!simpleTap) {
+                    // The first finger keeps its gesture; this one is a tap
+                    // of its own, so Enter works while Delete repeats.
+                    const int key = keyAt(point.position());
+                    if (key >= 0) {
+                        m_extraTouches.insert(point.id(), key);
+                        update();
+                    }
                     break;
+                }
                 release(m_lastPoint);
             }
             m_touchId = point.id();
@@ -319,7 +327,13 @@ void KeyboardView::touchEvent(QTouchEvent *event) {
                 move(point.position());
             break;
         case QEventPoint::Released:
-            if (point.id() == m_touchId) {
+            if (m_extraTouches.contains(point.id())) {
+                const int key = m_extraTouches.take(point.id());
+                update();
+                // Lifting off the key, like on any key, cancels it.
+                if (keyAt(point.position()) == key)
+                    fireKey(key);
+            } else if (point.id() == m_touchId) {
                 release(point.position());
                 m_touchId = -1;
             }
@@ -332,6 +346,8 @@ void KeyboardView::touchEvent(QTouchEvent *event) {
 }
 
 void KeyboardView::touchUngrabEvent() {
+    m_extraTouches.clear();
+    update();
     if (m_down)
         release(m_lastPoint, true);
 }
@@ -493,9 +509,13 @@ void KeyboardView::release(QPointF point, bool cancelled) {
             m_backend->swipeWord(swipe);
         return;
     }
-    if (pressed < 0)
+    fireKey(pressed, deleteRepeated);
+}
+
+void KeyboardView::fireKey(int index, bool deleteRepeated) {
+    if (index < 0 || index >= m_keys.size() || !m_backend)
         return;
-    const Key key = m_keys[pressed].key;
+    const Key key = m_keys[index].key;
     switch (key.action) {
     case Action::Shift: m_backend->toggleShift(); break;
     case Action::Mode: setMode(key.target); break;
@@ -592,7 +612,8 @@ void KeyboardView::paint(QPainter *painter) {
     painter->setRenderHint(QPainter::TextAntialiasing);
     painter->fillRect(QRectF(0, m_keysTop, width(), height() - m_keysTop), Background);
     for (int i = 0; i < m_keys.size(); ++i)
-        drawKey(painter, m_keys[i], i == m_pressed && m_down && !m_cursorMode);
+        drawKey(painter, m_keys[i], (i == m_pressed && m_down && !m_cursorMode)
+                                        || std::find(m_extraTouches.cbegin(), m_extraTouches.cend(), i) != m_extraTouches.cend());
     drawTrail(painter);
     drawPopup(painter);
 }

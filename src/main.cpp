@@ -1,5 +1,6 @@
 // KeyboardPOP — a touch keyboard for Omarchy with key popups and swipe typing.
 
+#include <QCoreApplication>
 #include <QElapsedTimer>
 #include <QFile>
 #include <QGuiApplication>
@@ -74,10 +75,26 @@ int dictionaryCommand(const QString &command, const QString &path) {
 
 int main(int argc, char *argv[]) {
     const QString command = argc > 1 ? QString::fromLocal8Bit(argv[1]) : QStringLiteral("toggle");
-    const QStringList commands{"toggle", "show", "hide", "quit", "import", "export"};
+    // `physical-key` is sent by the Hyprland config when a key is pressed
+    // while the keyboard shows, so a hardware keyboard puts it away.
+    const QStringList commands{"toggle", "show", "hide", "quit", "import", "export", "physical-key"};
     if (command == "--help" || command == "-h" || !commands.contains(command)) {
         QTextStream(command.startsWith("-h") || command == "--help" ? stdout : stderr) << Usage;
         return commands.contains(command) || command.startsWith("-h") || command == "--help" ? 0 : 1;
+    }
+
+    // Sent on keypresses, so it skips starting a GUI app: tell the running
+    // keyboard, or do nothing when none is running.
+    if (command == "physical-key") {
+        QCoreApplication core(argc, argv);
+        QLocalSocket socket;
+        socket.connectToServer(socketName());
+        if (socket.waitForConnected(300)) {
+            socket.write("physical-key\n");
+            socket.waitForBytesWritten(300);
+            socket.waitForDisconnected(300);
+        }
+        return 0;
     }
 
     const bool offscreen = qgetenv("QT_QPA_PLATFORM") == "offscreen";
@@ -170,7 +187,9 @@ int main(int argc, char *argv[]) {
     // not a regular window, so it never takes focus from the app being
     // typed into. It has to be set up before the window first shows.
     if (auto *layer = offscreen ? nullptr : LayerShellQt::Window::get(window)) {
-        layer->setLayer(LayerShellQt::Window::LayerTop);
+        // The overlay layer, so password dialogs (polkit) don't cover it:
+        // they sit on that layer too, and the keyboard shows after them.
+        layer->setLayer(LayerShellQt::Window::LayerOverlay);
         layer->setAnchors({LayerShellQt::Window::AnchorBottom, LayerShellQt::Window::AnchorLeft,
                            LayerShellQt::Window::AnchorRight});
         layer->setKeyboardInteractivity(LayerShellQt::Window::KeyboardInteractivityNone);
@@ -188,6 +207,21 @@ int main(int argc, char *argv[]) {
         window->show();
     };
     auto hide = [&] { window->hide(); };
+    // A hardware key was pressed: the hardware keyboard is in use, so the
+    // on-screen one gets out of the way. Keys KeyboardPOP sent itself
+    // (Enter, Backspace, arrows) reach the compositor too, and don't count.
+    const bool debug = qEnvironmentVariableIsSet("KEYBOARDPOP_DEBUG");
+    auto hideForHardware = [&](const char *why) {
+        if (!window->isVisible())
+            return;
+        if (debug)
+            qInfo("keyboardpop: hiding (%s)", why);
+        window->hide();
+    };
+    auto physicalKey = [&] {
+        if (!input.sentKeyWithin(500))
+            hideForHardware("hardware key");
+    };
     auto run = [&](const QString &c) {
         if (c == "show")
             show();
@@ -197,6 +231,8 @@ int main(int argc, char *argv[]) {
             window->isVisible() ? hide() : show();
         else if (c == "quit")
             app.quit();
+        else if (c == "physical-key")
+            physicalKey();
     };
     QObject::connect(&server, &QLocalServer::newConnection, [&] {
         while (QLocalSocket *client = server.nextPendingConnection()) {
@@ -214,35 +250,52 @@ int main(int argc, char *argv[]) {
     // mouse leaves it hidden. Without access to the touchscreen there is no
     // telling the two apart, so any focused field brings it up.
     TouchWatcher touch;
-    QElapsedTimer activatedAt;
+    QElapsedTimer activatedAt, hiddenAt;
     constexpr qint64 TapWindowMs = 700;
-    auto popUp = [&] {
+    auto popUp = [&](const char *why) {
         if (window->isVisible())
             return;
+        if (debug)
+            qInfo("keyboardpop: showing (%s)", why);
         backend.reset();
         window->show();
     };
+    QObject::connect(window, &QWindow::visibleChanged, [&](bool visible) {
+        if (!visible)
+            hiddenAt.start();
+    });
     QObject::connect(&input, &WaylandInput::fieldActivated, [&] {
         activatedAt.start();
         touch.rescanIfNeeded();
+        if (debug)
+            qInfo("keyboardpop: field focused, touchscreen %s, touched recently: %d",
+                  touch.available() ? "watched" : "not readable", touch.touchedWithin(TapWindowMs));
         if (!touch.available() || touch.touchedWithin(TapWindowMs))
-            popUp();
+            popUp("field focused by touch");
     });
     QObject::connect(&input, &WaylandInput::fieldDeactivated, [&] {
         activatedAt.invalidate();
         hide();
     });
-    // Tapping a field that already has focus (say, one clicked earlier) moves
-    // its cursor, which arrives as a context change.
-    QObject::connect(&input, &WaylandInput::contextChanged, [&] {
-        if (input.fieldActive() && touch.touchedWithin(TapWindowMs))
-            popUp();
-    });
     // The touch can also be read after the field reports focus.
     QObject::connect(&touch, &TouchWatcher::touched, [&] {
         if (input.fieldActive() && activatedAt.isValid() && activatedAt.elapsed() <= TapWindowMs)
-            popUp();
+            popUp("touch right after focus");
     });
+    // Tapping while a field already has focus (one clicked earlier, or a
+    // terminal that is always a text field) brings the keyboard back, the
+    // way tapping a focused field does on a tablet. Taps on the keyboard
+    // itself, like the one that just hid it, don't count.
+    QObject::connect(&touch, &TouchWatcher::tapped, [&] {
+        if (debug)
+            qInfo("keyboardpop: tap, field focused: %d", input.fieldActive());
+        if (input.fieldActive() && !(hiddenAt.isValid() && hiddenAt.elapsed() < 600))
+            popUp("tap on focused field");
+    });
+    // A touchpad touched or a keyboard attached means the hardware keyboard
+    // is being used.
+    QObject::connect(&touch, &TouchWatcher::touchpadTouched, [&] { hideForHardware("touchpad"); });
+    QObject::connect(&touch, &TouchWatcher::keyboardAttached, [&] { hideForHardware("keyboard attached"); });
     QObject::connect(&input, &WaylandInput::contextChanged, &backend, &Backend::contextChanged);
     QObject::connect(&app, &QCoreApplication::aboutToQuit, &personal, &Personal::flush);
 

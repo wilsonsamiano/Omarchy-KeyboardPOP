@@ -79,6 +79,25 @@ reads the touchscreen, which the package's udev rule
 user do for touchscreens only. Without that access it pops up on every
 focused field.
 
+It gets out of the way when the hardware keyboard is in use: when a
+keyboard (like the type cover) is attached, when the touchpad is touched
+(the udev rule covers touchpads too), and when a hardware key is pressed.
+That last one needs a few lines in `~/.config/hypr/autostart.lua`, since
+only Hyprland sees which keys are pressed. It sends only "a key was
+pressed", and only while the keyboard is showing:
+
+```lua
+hl.on("input.keyboard.key", function(_, _, pressed)
+  if pressed ~= 1 then return end
+  for _, layer in ipairs(hl.get_layers()) do
+    if layer.namespace == "keyboardpop" and layer.mapped then
+      hl.exec_cmd("keyboardpop physical-key")
+      return
+    end
+  end
+end)
+```
+
 ## Commands
 
 | Command | |

@@ -1,3 +1,6 @@
-# Lets the logged-in user read touchscreens (only touchscreens), so KeyboardPOP
-# can pop up when a text field is tapped but not when it is clicked.
+# Lets the logged-in user read touchscreens and touchpads (only those), so
+# KeyboardPOP can pop up when a text field is tapped but not when it is
+# clicked, and step aside when the touchpad is used. Keyboards are not
+# included: nothing here can see what is typed.
 SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT_TOUCHSCREEN}=="1", TAG+="uaccess"
+SUBSYSTEM=="input", KERNEL=="event*", ENV{ID_INPUT_TOUCHPAD}=="1", TAG+="uaccess"

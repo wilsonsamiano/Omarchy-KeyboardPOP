@@ -45,6 +45,10 @@ public:
     // The keyboard was shown by hand: start from an empty, known context.
     void resetContext();
 
+    // KeyboardPOP itself pressed a key through the virtual keyboard within
+    // the last `ms` milliseconds, so a key the compositor saw then was ours.
+    bool sentKeyWithin(qint64 ms) const { return m_lastKey.isValid() && m_lastKey.elapsed() <= ms; }
+
 signals:
     void modeChanged();
     void fieldActivated();
@@ -101,4 +105,5 @@ private:
 
     QVector<uint32_t> m_keysyms; // keycode - 9 -> keysym
     QElapsedTimer m_clock;
+    QElapsedTimer m_lastKey;
 };
