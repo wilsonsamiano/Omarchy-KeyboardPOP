@@ -14,8 +14,11 @@ ApplicationWindow {
     width: floating ? Math.min(Screen.width - 24, 700) : Screen.width
     // The typing rows, plus a slimmer control row (Esc, Tab, Ctrl, Alt,
     // Super, arrows) on top, and floating a grab handle above the strip.
+    // Docked it stays compact so the space above it still fits apps with a
+    // tall minimum window height (Grok Bot won't go under 562px; on an
+    // 864px screen this leaves 565px for windows).
     height: handleHeight + stripHeight
-            + Math.round(Math.min(260, Math.max(170, Screen.height * 0.25)) * 1.18 * (floating ? 0.86 : 1))
+            + Math.round(Math.min(260, Math.max(170, Screen.height * 0.25)) * (floating ? 1.015 : 0.94))
     color: floating ? "transparent" : palette_.background
 
     Material.theme: Material.Dark
