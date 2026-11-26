@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QColor>
+#include <QVariantMap>
 #include <QElapsedTimer>
 #include <QHash>
 #include <QPointer>
@@ -24,6 +25,11 @@ class KeyboardView : public QQuickPaintedItem {
     Q_PROPERTY(QColor accent READ accent WRITE setAccent NOTIFY appearanceChanged)
     Q_PROPERTY(QColor accentForeground READ accentForeground WRITE setAccentForeground NOTIFY appearanceChanged)
     Q_PROPERTY(int radius READ radius WRITE setRadius NOTIFY appearanceChanged)
+    // Colors by role (see Theme::palette); missing roles keep the classic look.
+    Q_PROPERTY(QVariantMap colors READ colors WRITE setColors NOTIFY appearanceChanged)
+    // Floating, the keyboard draws no background of its own: the window's
+    // rounded card shows through.
+    Q_PROPERTY(bool transparentBackground READ transparentBackground WRITE setTransparentBackground NOTIFY appearanceChanged)
     Q_PROPERTY(qreal keysTop READ keysTop WRITE setKeysTop NOTIFY appearanceChanged)
     Q_PROPERTY(qreal maxKeysWidth READ maxKeysWidth WRITE setMaxKeysWidth NOTIFY appearanceChanged)
     Q_PROPERTY(QString mode READ modeName NOTIFY modeChanged)
@@ -54,6 +60,10 @@ public:
     void setAccent(const QColor &color);
     QColor accentForeground() const { return m_accentForeground; }
     void setAccentForeground(const QColor &color);
+    QVariantMap colors() const { return m_palette; }
+    void setColors(const QVariantMap &palette);
+    bool transparentBackground() const { return m_transparentBackground; }
+    void setTransparentBackground(bool transparent);
     int radius() const { return m_radius; }
     void setRadius(int radius);
     qreal keysTop() const { return m_keysTop; }
@@ -110,6 +120,16 @@ private:
 
     QPointer<Backend> m_backend;
     QColor m_accent{"#FFD60A"}, m_accentForeground{"black"};
+    QVariantMap m_palette;
+    bool m_transparentBackground = false;
+    struct Colors {
+        QColor background{"#151517"};
+        QColor keyTop{"#3a3a40"}, keyBottom{"#2e2e33"};
+        QColor actionTop{"#27272b"}, actionBottom{"#202024"};
+        QColor pressedTop{"#55555c"}, pressedBottom{"#47474e"};
+        QColor keyEdge{"#08080a"};
+        QColor label{"#f2f2f4"}, hint{"#8e8e93"};
+    } m_colors;
     int m_radius = 0;
     qreal m_keysTop = 0;
     qreal m_maxKeysWidth = 0; // 0: as wide as the screen

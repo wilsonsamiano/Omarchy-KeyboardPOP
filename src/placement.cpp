@@ -1,0 +1,89 @@
+#include "placement.h"
+
+#include <LayerShellQt/window.h>
+#include <QQuickWindow>
+#include <QScreen>
+#include <QSettings>
+
+Placement::Placement(QSettings &settings, QObject *parent) : QObject(parent), m_settings(settings) {
+    m_floating = settings.value("floating", false).toBool();
+    m_placed = settings.contains("floatLeft") && settings.contains("floatBottom");
+    m_offset = QPoint(settings.value("floatLeft", 0).toInt(), settings.value("floatBottom", 24).toInt());
+}
+
+void Placement::attach(QQuickWindow *window, LayerShellQt::Window *layer) {
+    m_window = window;
+    m_layer = layer;
+    if (!window)
+        return;
+    // The size follows the mode (Main.qml), and docked the exclusive zone
+    // follows the size; a turned screen can leave a floating card off its edge.
+    connect(window, &QWindow::heightChanged, this, &Placement::apply);
+    connect(window, &QWindow::widthChanged, this, &Placement::apply);
+    connect(window, &QWindow::screenChanged, this, &Placement::apply);
+    if (auto *screen = window->screen())
+        connect(screen, &QScreen::geometryChanged, this, &Placement::apply);
+    apply();
+}
+
+void Placement::setFloating(bool floating) {
+    if (floating == m_floating)
+        return;
+    m_floating = floating;
+    m_settings.setValue("floating", floating);
+    emit floatingChanged();
+    apply();
+}
+
+QSize Placement::screenSize() const {
+    if (m_window && m_window->screen())
+        return m_window->screen()->geometry().size();
+    return {};
+}
+
+void Placement::clamp() {
+    if (!m_window)
+        return;
+    const QSize screen = screenSize();
+    if (screen.isEmpty())
+        return;
+    const int maxLeft = qMax(0, screen.width() - m_window->width());
+    const int maxBottom = qMax(0, screen.height() - m_window->height());
+    if (!m_placed) {
+        // Until it is dragged somewhere: centred, a little above the bottom
+        // edge. Worked out again as the size settles.
+        m_offset = QPoint(maxLeft / 2, qMin(24, maxBottom));
+    }
+    m_offset.setX(qBound(0, m_offset.x(), maxLeft));
+    m_offset.setY(qBound(0, m_offset.y(), maxBottom));
+}
+
+void Placement::apply() {
+    if (!m_layer || !m_window)
+        return;
+    if (m_floating) {
+        clamp();
+        m_layer->setAnchors({LayerShellQt::Window::AnchorBottom, LayerShellQt::Window::AnchorLeft});
+        m_layer->setExclusiveZone(0);
+        m_layer->setMargins(QMargins(m_offset.x(), 0, 0, m_offset.y()));
+    } else {
+        m_layer->setAnchors({LayerShellQt::Window::AnchorBottom, LayerShellQt::Window::AnchorLeft,
+                             LayerShellQt::Window::AnchorRight});
+        m_layer->setMargins(QMargins());
+        // Windows make room for the keyboard instead of hiding under it.
+        m_layer->setExclusiveZone(m_window->height());
+    }
+}
+
+void Placement::dragBy(qreal dx, qreal dy) {
+    if (!m_floating)
+        return;
+    m_offset += QPoint(qRound(dx), -qRound(dy));
+    m_placed = true;
+    apply();
+}
+
+void Placement::endDrag() {
+    m_settings.setValue("floatLeft", m_offset.x());
+    m_settings.setValue("floatBottom", m_offset.y());
+}

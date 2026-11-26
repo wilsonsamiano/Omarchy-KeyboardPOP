@@ -22,6 +22,7 @@
 #include "dictionary.h"
 #include "keyboardview.h"
 #include "personal.h"
+#include "placement.h"
 #include "theme.h"
 #include "touchwatcher.h"
 #include "translator.h"
@@ -37,6 +38,9 @@ const char *Usage =
     "  show     Show the keyboard\n"
     "  hide     Hide the keyboard\n"
     "  quit     Stop the running keyboard\n"
+    "  float    Float the keyboard as a card you can drag around\n"
+    "  dock     Dock the keyboard across the bottom of the screen\n"
+    "  style omarchy|classic  Colors from the Omarchy theme (default), or KeyboardPOP's dark grey\n"
     "  import <file>  Merge a SafePop/PressPop personal dictionary backup\n"
     "  export <file>  Save the personal dictionary as a backup\n";
 
@@ -77,7 +81,8 @@ int main(int argc, char *argv[]) {
     const QString command = argc > 1 ? QString::fromLocal8Bit(argv[1]) : QStringLiteral("toggle");
     // `physical-key` is sent by the Hyprland config when a key is pressed
     // while the keyboard shows, so a hardware keyboard puts it away.
-    const QStringList commands{"toggle", "show", "hide", "quit", "import", "export", "physical-key"};
+    const QStringList commands{"toggle", "show", "hide", "quit", "import", "export", "physical-key",
+                               "float", "dock", "style"};
     if (command == "--help" || command == "-h" || !commands.contains(command)) {
         QTextStream(command.startsWith("-h") || command == "--help" ? stdout : stderr) << Usage;
         return commands.contains(command) || command.startsWith("-h") || command == "--help" ? 0 : 1;
@@ -109,6 +114,12 @@ int main(int argc, char *argv[]) {
 
     if (command == "import" || command == "export")
         return dictionaryCommand(command, argc > 2 ? QString::fromLocal8Bit(argv[2]) : QString());
+    const QString argument = argc > 2 ? QString::fromLocal8Bit(argv[2]) : QString();
+    if (command == "style" && argument != "omarchy" && argument != "classic") {
+        QTextStream(stderr) << "keyboardpop style: omarchy or classic\n";
+        return 1;
+    }
+    const QString request = argument.isEmpty() ? command : command + ' ' + argument;
 
     // One keyboard at a time: a second launch (the app launcher, a key
     // binding) tells the running one what to do and exits.
@@ -116,7 +127,7 @@ int main(int argc, char *argv[]) {
         QLocalSocket socket;
         socket.connectToServer(socketName());
         if (socket.waitForConnected(300)) {
-            socket.write(command.toUtf8() + '\n');
+            socket.write(request.toUtf8() + '\n');
             socket.waitForBytesWritten(300);
             socket.waitForDisconnected(300);
             return 0;
@@ -142,6 +153,9 @@ int main(int argc, char *argv[]) {
     Personal personal(dictionary);
     Backend backend(dictionary, personal);
     QSettings settings;
+    theme.setStyle(settings.value("style", "omarchy").toString());
+    QObject::connect(&theme, &Theme::changed, [&] { settings.setValue("style", theme.style()); });
+    Placement placement(settings);
     backend.setLanguage(settings.value("language", "en").toString());
     QObject::connect(&backend, &Backend::languageChanged, [&] { settings.setValue("language", backend.language()); });
 
@@ -178,6 +192,7 @@ int main(int argc, char *argv[]) {
     engine.rootContext()->setContextProperty("translator", &translator);
     engine.rootContext()->setContextProperty("theme", &theme);
     engine.rootContext()->setContextProperty("backend", &backend);
+    engine.rootContext()->setContextProperty("placement", &placement);
     engine.load(QUrl("qrc:/Main.qml"));
     if (engine.rootObjects().isEmpty())
         return 1;
@@ -190,13 +205,11 @@ int main(int argc, char *argv[]) {
         // The overlay layer, so password dialogs (polkit) don't cover it:
         // they sit on that layer too, and the keyboard shows after them.
         layer->setLayer(LayerShellQt::Window::LayerOverlay);
-        layer->setAnchors({LayerShellQt::Window::AnchorBottom, LayerShellQt::Window::AnchorLeft,
-                           LayerShellQt::Window::AnchorRight});
         layer->setKeyboardInteractivity(LayerShellQt::Window::KeyboardInteractivityNone);
         layer->setScope("keyboardpop");
-        // Windows make room for the keyboard instead of hiding under it.
-        layer->setExclusiveZone(window->height());
-        QObject::connect(window, &QWindow::heightChanged, layer, [layer](int h) { layer->setExclusiveZone(h); });
+        // Docked across the bottom or floating: anchors, margins and the
+        // exclusive zone come from the placement.
+        placement.attach(window, layer);
     }
 
     auto show = [&] {
@@ -233,6 +246,12 @@ int main(int argc, char *argv[]) {
             app.quit();
         else if (c == "physical-key")
             physicalKey();
+        else if (c == "float")
+            placement.setFloating(true);
+        else if (c == "dock")
+            placement.setFloating(false);
+        else if (c.startsWith("style "))
+            theme.setStyle(c.mid(6));
     };
     QObject::connect(&server, &QLocalServer::newConnection, [&] {
         while (QLocalSocket *client = server.nextPendingConnection()) {
@@ -299,6 +318,6 @@ int main(int argc, char *argv[]) {
     QObject::connect(&input, &WaylandInput::contextChanged, &backend, &Backend::contextChanged);
     QObject::connect(&app, &QCoreApplication::aboutToQuit, &personal, &Personal::flush);
 
-    run(command == "toggle" ? "show" : command);
+    run(command == "toggle" ? "show" : request);
     return app.exec();
 }

@@ -16,12 +16,6 @@
 
 namespace {
 
-const QColor Background{"#151517"};
-const QColor KeyTop{"#3a3a40"}, KeyBottom{"#2e2e33"};
-const QColor ActionTop{"#27272b"}, ActionBottom{"#202024"};
-const QColor PressedTop{"#55555c"}, PressedBottom{"#47474e"};
-const QColor KeyEdge{"#08080a"};
-const QColor Label{"#f2f2f4"}, Hint{"#8e8e93"};
 constexpr double Gap = 6;
 constexpr double Tolerance = 26; // how far outside a key still counts as it
 
@@ -106,6 +100,37 @@ void KeyboardView::setAccentForeground(const QColor &color) {
     if (color == m_accentForeground)
         return;
     m_accentForeground = color;
+    update();
+    emit appearanceChanged();
+}
+
+void KeyboardView::setColors(const QVariantMap &palette) {
+    if (palette == m_palette)
+        return;
+    m_palette = palette;
+    const Colors classic;
+    auto color = [&](const char *role, const QColor &fallback) {
+        const QColor c = palette.value(role).value<QColor>();
+        return c.isValid() ? c : fallback;
+    };
+    m_colors.background = color("background", classic.background);
+    m_colors.keyTop = color("keyTop", classic.keyTop);
+    m_colors.keyBottom = color("keyBottom", classic.keyBottom);
+    m_colors.actionTop = color("actionTop", classic.actionTop);
+    m_colors.actionBottom = color("actionBottom", classic.actionBottom);
+    m_colors.pressedTop = color("pressedTop", classic.pressedTop);
+    m_colors.pressedBottom = color("pressedBottom", classic.pressedBottom);
+    m_colors.keyEdge = color("keyEdge", classic.keyEdge);
+    m_colors.label = color("label", classic.label);
+    m_colors.hint = color("hint", classic.hint);
+    update();
+    emit appearanceChanged();
+}
+
+void KeyboardView::setTransparentBackground(bool transparent) {
+    if (transparent == m_transparentBackground)
+        return;
+    m_transparentBackground = transparent;
     update();
     emit appearanceChanged();
 }
@@ -645,7 +670,8 @@ QString KeyboardView::matchSwipe() const {
 void KeyboardView::paint(QPainter *painter) {
     painter->setRenderHint(QPainter::Antialiasing);
     painter->setRenderHint(QPainter::TextAntialiasing);
-    painter->fillRect(QRectF(0, m_keysTop, width(), height() - m_keysTop), Background);
+    if (!m_transparentBackground)
+        painter->fillRect(QRectF(0, m_keysTop, width(), height() - m_keysTop), m_colors.background);
     for (int i = 0; i < m_keys.size(); ++i)
         drawKey(painter, m_keys[i], (i == m_pressed && m_down && !m_cursorMode)
                                         || std::find(m_extraTouches.cbegin(), m_extraTouches.cend(), i) != m_extraTouches.cend());
@@ -665,22 +691,22 @@ void KeyboardView::drawKey(QPainter *painter, const PlacedKey &placed, bool pres
                              && (m_backend->modifiers() & key.output.toInt()));
     const double r = std::min(6, m_radius);
 
-    QColor top = KeyTop, bottom = KeyBottom, text = Label;
+    QColor top = m_colors.keyTop, bottom = m_colors.keyBottom, text = m_colors.label;
     if (shiftOn) {
         top = m_accent.lighter(pressed ? 100 : 112);
         bottom = m_accent.darker(pressed ? 125 : 108);
         text = m_accentForeground;
     } else if (pressed) {
-        top = PressedTop;
-        bottom = PressedBottom;
+        top = m_colors.pressedTop;
+        bottom = m_colors.pressedBottom;
     } else if (action) {
-        top = ActionTop;
-        bottom = ActionBottom;
+        top = m_colors.actionTop;
+        bottom = m_colors.actionBottom;
     }
 
     // A darker edge under each key gives it depth; a pressed key sinks.
     painter->setPen(Qt::NoPen);
-    painter->setBrush(KeyEdge);
+    painter->setBrush(m_colors.keyEdge);
     painter->drawRoundedRect(rect.translated(0, 2), r, r);
     QRectF face = rect;
     double drop = pressed ? 1.5 : 0;
@@ -720,7 +746,7 @@ void KeyboardView::drawKey(QPainter *painter, const PlacedKey &placed, bool pres
         QFont hintFont = font;
         hintFont.setPixelSize(px(11 + 11 * p));
         painter->setFont(hintFont);
-        painter->setPen(mix(Hint, text, p));
+        painter->setPen(mix(m_colors.hint, text, p));
         const QPointF corner(face.right() - 10, face.top() + 12);
         const QPointF center = face.center();
         const QPointF at = corner + (center - corner) * p;
@@ -735,7 +761,7 @@ void KeyboardView::drawKey(QPainter *painter, const PlacedKey &placed, bool pres
         hintFont.setPixelSize(px(11));
         hintFont.setWeight(QFont::Normal);
         painter->setFont(hintFont);
-        painter->setPen(Hint);
+        painter->setPen(m_colors.hint);
         painter->drawText(face.adjusted(0, 4, -6, 0), Qt::AlignRight | Qt::AlignTop, hint);
     }
 }
@@ -778,7 +804,7 @@ void KeyboardView::drawPopup(QPainter *painter) {
         painter->setPen(Qt::NoPen);
         painter->setBrush(QColor(0, 0, 0, 90));
         painter->drawRoundedRect(row.translated(0, 3), r, r);
-        painter->setBrush(PressedTop);
+        painter->setBrush(m_colors.pressedTop);
         painter->drawRoundedRect(row, r, r);
         font.setPixelSize(px(24));
         painter->setFont(font);
@@ -790,7 +816,7 @@ void KeyboardView::drawPopup(QPainter *painter) {
                 painter->setBrush(m_accent);
                 painter->drawRoundedRect(c.adjusted(3, 3, -3, -3), r, r);
             }
-            painter->setPen(selected ? m_accentForeground : Label);
+            painter->setPen(selected ? m_accentForeground : m_colors.label);
             const QString v = m_backend && m_backend->shiftOn() ? m_variants[i].toUpper() : m_variants[i];
             painter->drawText(c, Qt::AlignCenter, v);
         }
@@ -826,14 +852,14 @@ void KeyboardView::drawPopup(QPainter *painter) {
     painter->setBrush(QColor(0, 0, 0, 110));
     painter->drawPath(path.translated(0, 3));
     QLinearGradient gradient(bubble.topLeft(), QPointF(bubble.left(), key.bottom()));
-    gradient.setColorAt(0, PressedTop);
-    gradient.setColorAt(1, PressedBottom);
+    gradient.setColorAt(0, m_colors.pressedTop);
+    gradient.setColorAt(1, m_colors.pressedBottom);
     painter->setBrush(gradient);
     painter->drawPath(path);
 
     const bool emoji = m_mode == Mode::Emoji && placed.key.action == Action::Char;
     font.setPixelSize(px(label.size() > 2 && !emoji ? 18 : emoji ? 34 : 32));
     painter->setFont(font);
-    painter->setPen(m_flick.isEmpty() ? Label : m_accent);
+    painter->setPen(m_flick.isEmpty() ? m_colors.label : m_accent);
     painter->drawText(bubble, Qt::AlignCenter, label);
 }

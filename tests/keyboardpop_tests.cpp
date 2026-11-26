@@ -461,6 +461,49 @@ private slots:
         QCOMPARE(theme.accentForeground(), QString("white"));
     }
 
+    void themePaletteFollowsOmarchyColors() {
+        QTemporaryDir dir;
+        QDir(dir.path()).mkpath("theme");
+        write(dir.path() + "/theme/colors.toml",
+              "mode = \"dark\"\naccent = \"#7aa2f7\"\nbackground = \"#1a1b26\"\n"
+              "dark_background = \"#13141c\"\nlighter_background = \"#24283b\"\n"
+              "foreground = \"#a9b1d6\"\nbright_foreground = \"#c0caf5\"\n"
+              "dark_foreground = \"#565f89\"\nred = \"#f7768e\"\n");
+        Theme theme(dir.path());
+        QCOMPARE(theme.style(), QString("omarchy"));
+        const auto palette = theme.palette();
+        QCOMPARE(palette.value("strip").value<QColor>(), QColor("#1a1b26"));
+        QCOMPARE(palette.value("background").value<QColor>(), QColor("#13141c"));
+        QCOMPARE(palette.value("keyTop").value<QColor>(), QColor("#24283b"));
+        QCOMPARE(palette.value("label").value<QColor>(), QColor("#c0caf5"));
+        QCOMPARE(palette.value("hint").value<QColor>(), QColor("#565f89"));
+        QCOMPARE(palette.value("error").value<QColor>(), QColor("#f7768e"));
+
+        theme.setStyle("classic");
+        QCOMPARE(theme.palette().value("keyTop").value<QColor>(), QColor("#3a3a40"));
+        QCOMPARE(theme.accent(), QString("#7aa2f7")); // classic keeps the theme's accent
+    }
+
+    void themePaletteDerivesMissingColors() {
+        // An older or minimal theme with only background and foreground, light.
+        QTemporaryDir dir;
+        QDir(dir.path()).mkpath("theme");
+        write(dir.path() + "/theme/colors.toml", "background = \"#f5f5f5\"\nforeground = \"#222222\"\n");
+        Theme theme(dir.path());
+        const auto palette = theme.palette();
+        QCOMPARE(palette.value("strip").value<QColor>(), QColor("#f5f5f5"));
+        QCOMPARE(palette.value("label").value<QColor>(), QColor("#222222"));
+        // Light theme: keys are lighter than the keyboard behind them.
+        QVERIFY(palette.value("keyTop").value<QColor>().lightnessF()
+                > palette.value("background").value<QColor>().lightnessF());
+    }
+
+    void themeWithoutColorsIsClassic() {
+        QTemporaryDir dir;
+        Theme theme(dir.path());
+        QCOMPARE(theme.palette().value("background").value<QColor>(), QColor("#151517"));
+    }
+
     void translatorFollowsTheLanguageFile() {
         QTemporaryDir dir;
         write(dir.path() + "/language", "pt-BR\n");

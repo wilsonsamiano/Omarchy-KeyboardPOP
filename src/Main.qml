@@ -10,20 +10,27 @@ ApplicationWindow {
     id: win
     visible: false
     title: "KeyboardPOP"
-    width: Screen.width
+    // Docked it spans the screen; floating it is a smaller card.
+    width: floating ? Math.min(Screen.width - 24, 700) : Screen.width
     // The typing rows, plus a slimmer control row (Esc, Tab, Ctrl, Alt,
-    // Super, arrows) on top.
-    height: stripHeight + Math.round(Math.min(260, Math.max(170, Screen.height * 0.25)) * 1.18)
-    color: "#151517"
+    // Super, arrows) on top, and floating a grab handle above the strip.
+    height: handleHeight + stripHeight
+            + Math.round(Math.min(260, Math.max(170, Screen.height * 0.25)) * 1.18 * (floating ? 0.86 : 1))
+    color: floating ? "transparent" : palette_.background
 
     Material.theme: Material.Dark
     Material.accent: theme.accent
     Material.roundedScale: theme.radius
 
+    readonly property bool floating: placement.floating
     readonly property int stripHeight: 44
-    readonly property color stripColor: "#1d1d20"
-    readonly property color textColor: "#f2f2f4"
-    readonly property color mutedColor: "#8e8e93"
+    readonly property int handleHeight: floating ? 28 : 0
+    readonly property int cardRadius: Math.max(theme.radius, 12)
+    readonly property var palette_: theme.palette
+    readonly property color stripColor: palette_.strip
+    readonly property color textColor: palette_.label
+    readonly property color mutedColor: palette_.hint
+    readonly property color errorColor: palette_.error
     property bool statusVisible: false
 
     // The status (how KeyboardPOP is typing, or what's wrong) shows for a
@@ -35,9 +42,48 @@ ApplicationWindow {
     onVisibleChanged: if (visible && backend.status !== "") { statusVisible = true; statusTimer.restart() }
     Timer { id: statusTimer; interval: 7000; onTriggered: win.statusVisible = backend.statusIsError }
 
+    // Floating: a rounded card behind everything, edged so it reads over
+    // any window.
+    Rectangle {
+        anchors.fill: parent
+        visible: win.floating
+        radius: win.cardRadius
+        color: win.palette_.background
+        border { width: 1; color: win.palette_.divider }
+    }
+
+    // Floating: drag here to move the keyboard.
+    Rectangle {
+        id: handle
+        visible: win.floating
+        anchors { top: parent.top; left: parent.left; right: parent.right; margins: 1 }
+        height: win.handleHeight
+        topLeftRadius: win.cardRadius
+        topRightRadius: win.cardRadius
+        color: win.stripColor
+        Rectangle {
+            anchors.centerIn: parent
+            width: 56; height: 5; radius: 2.5
+            color: dragArea.pressed ? theme.accent : win.mutedColor
+        }
+        MouseArea {
+            id: dragArea
+            anchors.fill: parent
+            preventStealing: true
+            property point pressAt
+            onPressed: function(mouse) { pressAt = Qt.point(mouse.x, mouse.y) }
+            // The window moves under the finger, so each step is measured
+            // from where the press landed in it.
+            onPositionChanged: function(mouse) { placement.dragBy(mouse.x - pressAt.x, mouse.y - pressAt.y) }
+            onReleased: placement.endDrag()
+            onCanceled: placement.endDrag()
+        }
+    }
+
     Rectangle {
         id: strip
-        anchors { top: parent.top; left: parent.left; right: parent.right }
+        anchors { top: handle.visible ? handle.bottom : parent.top; left: parent.left; right: parent.right
+                  leftMargin: win.floating ? 1 : 0; rightMargin: win.floating ? 1 : 0 }
         height: win.stripHeight
         color: win.stripColor
 
@@ -80,7 +126,7 @@ ApplicationWindow {
                             visible: index > 0
                             anchors { left: parent.left; verticalCenter: parent.verticalCenter }
                             width: 1; height: parent.height * 0.5
-                            color: "#38383d"
+                            color: win.palette_.divider
                         }
                         Text {
                             anchors { fill: parent; leftMargin: 8; rightMargin: 8 }
@@ -99,7 +145,7 @@ ApplicationWindow {
                 anchors { left: languageButton.right; right: infoButton.left; verticalCenter: parent.verticalCenter; leftMargin: 8; rightMargin: 8 }
                 visible: win.statusVisible
                 text: backend.status
-                color: backend.statusIsError ? "#ff6961" : win.mutedColor
+                color: backend.statusIsError ? win.errorColor : win.mutedColor
                 font.pixelSize: 14
                 wrapMode: Text.WordWrap
                 maximumLineCount: 2
@@ -109,7 +155,7 @@ ApplicationWindow {
 
             StripButton {
                 id: infoButton
-                anchors { right: hideButton.left; top: parent.top; bottom: parent.bottom }
+                anchors { right: placeButton.left; top: parent.top; bottom: parent.bottom }
                 width: backend.status !== "" ? 48 : 0
                 visible: width > 0
                 onTapped: { win.statusVisible = !win.statusVisible; if (win.statusVisible) statusTimer.restart() }
@@ -117,12 +163,41 @@ ApplicationWindow {
                     anchors.centerIn: parent
                     width: 22; height: 22; radius: 11
                     color: "transparent"
-                    border { color: backend.statusIsError ? "#ff6961" : win.mutedColor; width: 1.5 }
+                    border { color: backend.statusIsError ? win.errorColor : win.mutedColor; width: 1.5 }
                     Text {
                         anchors.centerIn: parent
                         text: "i"
-                        color: backend.statusIsError ? "#ff6961" : win.mutedColor
+                        color: backend.statusIsError ? win.errorColor : win.mutedColor
                         font { pixelSize: 14; weight: Font.DemiBold; italic: true }
+                    }
+                }
+            }
+
+            // Float the keyboard, or dock it again. The icon shows where it
+            // goes: a card lifted off the bottom, or a bar along it.
+            StripButton {
+                id: placeButton
+                anchors { right: hideButton.left; top: parent.top; bottom: parent.bottom }
+                width: 52
+                onTapped: placement.floating = !placement.floating
+                Item {
+                    anchors.centerIn: parent
+                    width: 22; height: 18
+                    Rectangle {
+                        anchors.fill: parent
+                        color: "transparent"
+                        radius: 3
+                        border { width: 1.5; color: win.textColor }
+                    }
+                    Rectangle {
+                        visible: !win.floating
+                        x: 5; y: 5; width: 12; height: 7; radius: 1.5
+                        color: win.textColor
+                    }
+                    Rectangle {
+                        visible: win.floating
+                        x: 3; y: parent.height - 7; width: parent.width - 6; height: 4; radius: 1
+                        color: win.textColor
                     }
                 }
             }
@@ -148,8 +223,10 @@ ApplicationWindow {
     KeyboardView {
         anchors.fill: parent
         z: 1
-        keysTop: win.stripHeight
+        keysTop: win.handleHeight + win.stripHeight
         maxKeysWidth: 960
+        colors: theme.palette
+        transparentBackground: win.floating
         keyboardBackend: backend
         accent: theme.accent
         accentForeground: theme.accentForeground

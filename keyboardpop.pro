@@ -12,6 +12,7 @@ HEADERS += \
     src/dictionary.h \
     src/keyboardview.h \
     src/personal.h \
+    src/placement.h \
     src/swipe.h \
     src/textsink.h \
     src/theme.h \
@@ -25,6 +26,7 @@ SOURCES += \
     src/dictionary.cpp \
     src/keyboardview.cpp \
     src/personal.cpp \
+    src/placement.cpp \
     src/swipe.cpp \
     src/theme.cpp \
     src/touchwatcher.cpp \

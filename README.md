@@ -40,6 +40,12 @@ Setup > Language.
   pad.
 - **Languages:** tap **EN** in the strip to cycle English, Tagalog, and
   Spanish dictionaries.
+- **Omarchy colors.** The keys, strip, and labels take their colors from the
+  current Omarchy theme and change with it; `keyboardpop style classic` brings
+  back the dark grey look.
+- **Floating.** Float the keyboard as a smaller card and drag it anywhere by
+  the handle on top; windows stay full size under it. It remembers where it
+  was. Dock it again from the same button.
 - **Two-thumb typing:** a second finger landing finishes the first finger's
   tap instead of being ignored.
 
@@ -207,6 +213,8 @@ can use alongside the password; it gives up after about five seconds.
 | `keyboardpop` / `keyboardpop toggle` | Show the keyboard, or hide it if it's showing |
 | `keyboardpop show` / `keyboardpop hide` | Show or hide it (`hide` starts it hidden if it isn't running) |
 | `keyboardpop quit` | Stop it |
+| `keyboardpop float` / `keyboardpop dock` | Float it as a card you drag by its handle, or dock it across the bottom (also the button beside the chevron) |
+| `keyboardpop style omarchy` / `keyboardpop style classic` | Take every color from the Omarchy theme (the default), or KeyboardPOP's dark grey look with the theme's accent |
 | `keyboardpop import <file>` | Merge a personal-dictionary backup from the Android app |
 | `keyboardpop export <file>` | Save the personal dictionary as a backup |
 

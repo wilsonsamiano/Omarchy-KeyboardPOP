@@ -61,6 +61,89 @@ void Theme::refreshRounding() {
     m_roundingTimeout.start();
 }
 
+QMap<QString, QString> Theme::readColors(const QString &path) {
+    QMap<QString, QString> colors;
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly))
+        return colors;
+    const QRegularExpression expression(R"re(^\s*([a-z_0-9]+)\s*=\s*["'](#[0-9a-fA-F]{6})["'])re",
+                                        QRegularExpression::MultilineOption);
+    auto it = expression.globalMatch(QString::fromUtf8(file.readAll()));
+    while (it.hasNext()) {
+        const auto match = it.next();
+        colors.insert(match.captured(1), match.captured(2));
+    }
+    return colors;
+}
+
+namespace {
+QColor mixed(const QColor &a, const QColor &b, double t) {
+    return QColor::fromRgbF(a.redF() + (b.redF() - a.redF()) * t, a.greenF() + (b.greenF() - a.greenF()) * t,
+                            a.blueF() + (b.blueF() - a.blueF()) * t);
+}
+} // namespace
+
+QVariantMap Theme::paletteFor(const QString &style, const QMap<QString, QString> &colors) {
+    // KeyboardPOP's own look, after iOS's dark keyboard.
+    QVariantMap classic{
+        {"background", QColor("#151517")}, {"strip", QColor("#1d1d20")},
+        {"keyTop", QColor("#3a3a40")},     {"keyBottom", QColor("#2e2e33")},
+        {"actionTop", QColor("#27272b")},  {"actionBottom", QColor("#202024")},
+        {"pressedTop", QColor("#55555c")}, {"pressedBottom", QColor("#47474e")},
+        {"keyEdge", QColor("#08080a")},    {"label", QColor("#f2f2f4")},
+        {"hint", QColor("#8e8e93")},       {"divider", QColor("#38383d")},
+        {"error", QColor("#ff6961")},
+    };
+    if (style != "omarchy" || !colors.contains("background") || !colors.contains("foreground"))
+        return classic;
+
+    auto pick = [&](const char *name, const QColor &fallback) {
+        return colors.contains(name) ? QColor(colors.value(name)) : fallback;
+    };
+    const QColor bg(colors.value("background")), fg(colors.value("foreground"));
+    const bool light = bg.lightnessF() > 0.5;
+    const QColor black("black"), white("white");
+    // Older themes only name background and foreground; derive the rest.
+    // The keyboard's base sits a step darker than the theme's background,
+    // and the keys stand off it: raised a step lighter on a dark theme,
+    // near-white cards on a light one (like iOS's light keyboard).
+    const QColor lighter = pick("lighter_background", mixed(bg, fg, 0.12));
+    const QColor dark = pick("dark_background", light ? mixed(bg, fg, 0.1) : mixed(bg, black, 0.2));
+    const QColor darker = pick("darker_background", light ? mixed(bg, fg, 0.2) : mixed(bg, black, 0.4));
+    const QColor label = pick("bright_foreground", fg);
+    const QColor hint = pick("dark_foreground", mixed(fg, bg, 0.45));
+    const QColor keyFace = light ? mixed(bg, white, 0.7) : lighter;
+    const QColor base = dark;
+    return {
+        {"background", base},
+        {"strip", bg},
+        {"keyTop", keyFace},
+        {"keyBottom", mixed(keyFace, base, 0.25)},
+        {"actionTop", mixed(keyFace, base, 0.55)},
+        {"actionBottom", mixed(keyFace, base, 0.7)},
+        {"pressedTop", mixed(keyFace, fg, 0.28)},
+        {"pressedBottom", mixed(keyFace, fg, 0.18)},
+        {"keyEdge", light ? mixed(darker, fg, 0.15) : darker.darker(140)},
+        {"label", label},
+        {"hint", hint},
+        {"divider", mixed(bg, fg, 0.2)},
+        {"error", pick("red", QColor("#ff6961"))},
+    };
+}
+
+void Theme::setStyle(const QString &style) {
+    const QString next = style == "classic" ? "classic" : "omarchy";
+    if (next == m_style)
+        return;
+    m_style = next;
+    updatePalette();
+    emit changed();
+}
+
+void Theme::updatePalette() {
+    m_palette = paletteFor(m_style, m_colors);
+}
+
 QString Theme::readAccent(const QString &path) {
     QFile file(path);
     if (file.open(QIODevice::ReadOnly)) {
@@ -101,8 +184,11 @@ void Theme::reload() {
             m_watcher.addPath(path);
 
     const auto accent = readAccent(m_directory + "/theme/colors.toml");
-    if (accent != m_accent) {
+    const auto colors = readColors(m_directory + "/theme/colors.toml");
+    if (accent != m_accent || colors != m_colors || m_palette.isEmpty()) {
         m_accent = accent;
+        m_colors = colors;
+        updatePalette();
         emit changed();
     }
 }

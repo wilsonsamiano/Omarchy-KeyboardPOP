@@ -7,7 +7,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        color: "#2c2c31"
+        color: theme.palette.pressedBottom
         opacity: tap.pressed ? 1 : 0
     }
     TapHandler {
