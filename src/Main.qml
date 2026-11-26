@@ -24,7 +24,7 @@ ApplicationWindow {
 
     readonly property bool floating: placement.floating
     readonly property int stripHeight: 44
-    readonly property int handleHeight: floating ? 28 : 0
+    readonly property int handleHeight: floating ? 36 : 0
     readonly property int cardRadius: Math.max(theme.radius, 12)
     readonly property var palette_: theme.palette
     readonly property color stripColor: palette_.strip

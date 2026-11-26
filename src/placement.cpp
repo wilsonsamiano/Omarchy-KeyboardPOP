@@ -5,7 +5,18 @@
 #include <QScreen>
 #include <QSettings>
 
+// Room kept clear at the top and bottom of the screen. Margins count from
+// the edge of the area other layers leave free, and a bar's exclusive zone
+// shifts that area, so the keyboard keeps this much away from the edges and
+// its drag handle always stays on screen.
+static constexpr int EdgeReserve = 48;
+
 Placement::Placement(QSettings &settings, QObject *parent) : QObject(parent), m_settings(settings) {
+    // After a frame with the new position is shown, give the compositor a
+    // moment to deliver touches that were already on their way.
+    m_settle.setSingleShot(true);
+    m_settle.setInterval(24);
+    connect(&m_settle, &QTimer::timeout, this, [this] { m_moving = false; });
     m_floating = settings.value("floating", false).toBool();
     m_placed = settings.contains("floatLeft") && settings.contains("floatBottom");
     m_offset = QPoint(settings.value("floatLeft", 0).toInt(), settings.value("floatBottom", 24).toInt());
@@ -21,6 +32,10 @@ void Placement::attach(QQuickWindow *window, LayerShellQt::Window *layer) {
     connect(window, &QWindow::heightChanged, this, &Placement::apply);
     connect(window, &QWindow::widthChanged, this, &Placement::apply);
     connect(window, &QWindow::screenChanged, this, &Placement::apply);
+    connect(window, &QQuickWindow::frameSwapped, this, [this] {
+        if (m_moving && !m_settle.isActive())
+            m_settle.start();
+    });
     if (auto *screen = window->screen())
         connect(screen, &QScreen::geometryChanged, this, &Placement::apply);
     apply();
@@ -48,11 +63,11 @@ void Placement::clamp() {
     if (screen.isEmpty())
         return;
     const int maxLeft = qMax(0, screen.width() - m_window->width());
-    const int maxBottom = qMax(0, screen.height() - m_window->height());
+    const int maxBottom = qMax(0, screen.height() - m_window->height() - 2 * EdgeReserve);
     if (!m_placed) {
         // Until it is dragged somewhere: centred, a little above the bottom
         // edge. Worked out again as the size settles.
-        m_offset = QPoint(maxLeft / 2, qMin(24, maxBottom));
+        m_offset = QPoint(maxLeft / 2, 0);
     }
     m_offset.setX(qBound(0, m_offset.x(), maxLeft));
     m_offset.setY(qBound(0, m_offset.y(), maxBottom));
@@ -78,12 +93,23 @@ void Placement::apply() {
 void Placement::dragBy(qreal dx, qreal dy) {
     if (!m_floating)
         return;
+    if (m_moving && m_movedAt.isValid() && m_movedAt.elapsed() < 120)
+        return;
+    const QPoint before = m_offset;
     m_offset += QPoint(qRound(dx), -qRound(dy));
     m_placed = true;
     apply();
+    if (m_offset != before && m_window) {
+        // Wait for this move to show before taking the next touch.
+        m_moving = true;
+        m_movedAt.start();
+        m_window->requestUpdate();
+    }
 }
 
 void Placement::endDrag() {
+    m_moving = false;
+    m_settle.stop();
     m_settings.setValue("floatLeft", m_offset.x());
     m_settings.setValue("floatBottom", m_offset.y());
 }

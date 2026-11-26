@@ -1,8 +1,10 @@
 #pragma once
 
+#include <QElapsedTimer>
 #include <QObject>
 #include <QPoint>
 #include <QPointer>
+#include <QTimer>
 
 class QQuickWindow;
 class QSettings;
@@ -43,4 +45,12 @@ private:
     bool m_floating = false;
     bool m_placed = false;  // a floating position has been chosen
     QPoint m_offset;        // left margin, bottom margin
+    // A move sent to the compositor that the window has not shown yet.
+    // Touch positions are relative to the window, so until the move lands
+    // they still measure from the old spot; using them would add the same
+    // distance again and again and fling the keyboard off the screen.
+    bool m_moving = false;
+    QTimer m_settle;
+    // In case no frame comes (nothing to redraw), don't wait forever.
+    QElapsedTimer m_movedAt;
 };
