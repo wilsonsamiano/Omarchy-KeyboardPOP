@@ -1,4 +1,8 @@
 #include "placement.h"
+#include "touchwatcher.h"
+
+#include <QDir>
+#include <QFile>
 
 #include <LayerShellQt/window.h>
 #include <QQuickWindow>
@@ -90,8 +94,57 @@ void Placement::apply() {
     }
 }
 
+void Placement::setTouch(TouchWatcher *touch) {
+    m_touch = touch;
+    if (touch)
+        connect(touch, &TouchWatcher::fingerMoved, this, &Placement::followFinger);
+}
+
+int Placement::screenTransform() {
+    QFile file(QDir::homePath() + "/.local/state/autorotate/transform");
+    if (!file.open(QIODevice::ReadOnly))
+        return 0;
+    return QString::fromUtf8(file.readAll()).trimmed().toInt() & 3;
+}
+
+void Placement::beginDrag() {
+    m_fingerDrag = false;
+    if (!m_floating || !m_touch)
+        return;
+    QPointF finger;
+    if (!m_touch->fingerPosition(&finger))
+        return; // a mouse: dragBy does it
+    m_fingerDrag = true;
+    m_fingerStart = finger;
+    m_dragStartOffset = m_offset;
+    m_dragTransform = screenTransform();
+}
+
+void Placement::followFinger() {
+    if (!m_fingerDrag || !m_touch)
+        return;
+    QPointF finger;
+    if (!m_touch->fingerPosition(&finger))
+        return;
+    // How far the finger went on the panel, turned to the screen as it is
+    // rotated (the same mapping as touchswipe), in screen pixels.
+    const double dx = finger.x() - m_fingerStart.x(), dy = finger.y() - m_fingerStart.y();
+    double sx = dx, sy = dy;
+    switch (m_dragTransform) {
+    case 1: sx = -dy; sy = dx; break;
+    case 2: sx = -dx; sy = -dy; break;
+    case 3: sx = dy; sy = -dx; break;
+    default: break;
+    }
+    const QSize screen = screenSize();
+    m_offset = m_dragStartOffset + QPoint(qRound(sx * screen.width()), -qRound(sy * screen.height()));
+    m_placed = true;
+    apply();
+}
+
 void Placement::dragBy(qreal dx, qreal dy) {
-    if (!m_floating)
+    // A finger drag follows the touchscreen instead (followFinger).
+    if (!m_floating || m_fingerDrag)
         return;
     if (m_moving && m_movedAt.isValid() && m_movedAt.elapsed() < 120)
         return;
@@ -108,6 +161,7 @@ void Placement::dragBy(qreal dx, qreal dy) {
 }
 
 void Placement::endDrag() {
+    m_fingerDrag = false;
     m_moving = false;
     m_settle.stop();
     m_settings.setValue("floatLeft", m_offset.x());

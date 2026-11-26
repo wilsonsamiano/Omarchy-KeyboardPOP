@@ -269,6 +269,7 @@ int main(int argc, char *argv[]) {
     // mouse leaves it hidden. Without access to the touchscreen there is no
     // telling the two apart, so any focused field brings it up.
     TouchWatcher touch;
+    placement.setTouch(&touch);
     QElapsedTimer activatedAt, hiddenAt;
     constexpr qint64 TapWindowMs = 700;
     auto popUp = [&](const char *why) {

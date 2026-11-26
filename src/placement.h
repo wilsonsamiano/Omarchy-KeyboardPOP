@@ -3,10 +3,12 @@
 #include <QElapsedTimer>
 #include <QObject>
 #include <QPoint>
+#include <QPointF>
 #include <QPointer>
 #include <QTimer>
 
 class QQuickWindow;
+class TouchWatcher;
 class QSettings;
 namespace LayerShellQt { class Window; }
 
@@ -27,7 +29,14 @@ public:
     bool floating() const { return m_floating; }
     void setFloating(bool floating);
 
-    // A drag on the floating keyboard's handle, by this much (window pixels).
+    // The touchscreen, for following a finger by where it really is.
+    void setTouch(TouchWatcher *touch);
+
+    // A drag on the floating keyboard's handle. With a finger on the
+    // touchscreen it follows the finger's real position (beginDrag to
+    // endDrag); otherwise, with a mouse, dragBy moves it by this much
+    // (window pixels).
+    Q_INVOKABLE void beginDrag();
     Q_INVOKABLE void dragBy(qreal dx, qreal dy);
     Q_INVOKABLE void endDrag();
 
@@ -36,10 +45,18 @@ signals:
 
 private:
     void apply();
+    void followFinger();
+    // The screen's rotation (Hyprland transform 0-3), from autorotate.
+    static int screenTransform();
     void clamp();
     QSize screenSize() const;
 
     QSettings &m_settings;
+    QPointer<TouchWatcher> m_touch;
+    bool m_fingerDrag = false;
+    QPointF m_fingerStart;     // on the panel, 0-1
+    QPoint m_dragStartOffset;
+    int m_dragTransform = 0;
     QPointer<QQuickWindow> m_window;
     LayerShellQt::Window *m_layer = nullptr;
     bool m_floating = false;

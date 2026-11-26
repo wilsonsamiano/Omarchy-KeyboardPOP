@@ -2,6 +2,7 @@
 
 #include <QElapsedTimer>
 #include <QObject>
+#include <QPointF>
 #include <QVector>
 
 class QFileSystemWatcher;
@@ -35,6 +36,13 @@ public:
     // A finger went down within the last `ms` milliseconds.
     bool touchedWithin(qint64 ms) const;
 
+    // Where a finger is on the touchscreen right now, as a fraction of the
+    // panel's width and height (before any screen rotation); false when no
+    // finger is down. Unlike positions Qt reports, this doesn't depend on
+    // where the keyboard's window is, so a drag that moves the window can
+    // follow the finger exactly.
+    bool fingerPosition(QPointF *position) const;
+
     // Looks for touchscreens again if none were open (e.g. the udev rule
     // was installed after KeyboardPOP started).
     void rescanIfNeeded();
@@ -42,6 +50,8 @@ public:
 signals:
     // A finger went down.
     void touched();
+    // A finger on the touchscreen moved (see fingerPosition).
+    void fingerMoved();
     // A finger went down and came up quickly without sliding: a tap, not a
     // scroll, swipe, or long press.
     void tapped();
@@ -68,6 +78,7 @@ private:
     void scan();
     void closeDevice(int index);
     void readDevice(int fd);
+    void tapOrSlide(Device &d);
 
     // Whether a hardware keyboard is at this node, from udev's database.
     static bool isExternalKeyboard(const QString &node);

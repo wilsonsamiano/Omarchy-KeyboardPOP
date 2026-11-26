@@ -194,19 +194,38 @@ void TouchWatcher::readDevice(int fd) {
                 d.down = false;
                 if (tap)
                     emit tapped();
-            } else if (e.type == EV_SYN && e.code == SYN_REPORT && d.down && !d.moved) {
-                // The position can come after BTN_TOUCH in the same report,
-                // so the start point is taken when the report ends.
-                if (d.needStart) {
-                    d.startX = d.x;
-                    d.startY = d.y;
-                    d.needStart = false;
-                }
-                if (std::abs(d.x - d.startX) > d.rangeX * TapSlop || std::abs(d.y - d.startY) > d.rangeY * TapSlop)
-                    d.moved = true;
+            } else if (e.type == EV_SYN && e.code == SYN_REPORT && d.down) {
+                if (!d.moved)
+                    tapOrSlide(d);
+                emit fingerMoved();
             }
         }
     }
+}
+
+// Takes a touch's start point and notes when it slides far enough that it
+// is no longer a tap.
+void TouchWatcher::tapOrSlide(Device &d) {
+    // The position can come after BTN_TOUCH in the same report, so the
+    // start point is taken when the report ends.
+    if (d.needStart) {
+        d.startX = d.x;
+        d.startY = d.y;
+        d.needStart = false;
+    }
+    if (std::abs(d.x - d.startX) > d.rangeX * TapSlop || std::abs(d.y - d.startY) > d.rangeY * TapSlop)
+        d.moved = true;
+}
+
+bool TouchWatcher::fingerPosition(QPointF *position) const {
+    for (const Device &d : m_devices) {
+        if (d.touchpad || !d.down || d.rangeX <= 0 || d.rangeY <= 0)
+            continue;
+        if (position)
+            *position = QPointF(double(d.x) / d.rangeX, double(d.y) / d.rangeY);
+        return true;
+    }
+    return false;
 }
 
 bool TouchWatcher::touchedWithin(qint64 ms) const {

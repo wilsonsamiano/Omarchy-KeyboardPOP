@@ -71,7 +71,7 @@ ApplicationWindow {
             anchors.fill: parent
             preventStealing: true
             property point pressAt
-            onPressed: function(mouse) { pressAt = Qt.point(mouse.x, mouse.y) }
+            onPressed: function(mouse) { pressAt = Qt.point(mouse.x, mouse.y); placement.beginDrag() }
             // The window moves under the finger, so each step is measured
             // from where the press landed in it.
             onPositionChanged: function(mouse) { placement.dragBy(mouse.x - pressAt.x, mouse.y - pressAt.y) }
