@@ -186,6 +186,24 @@ while the dots are showing, and touches pass through it. Install it like the
 app switcher (`omarchy plugin enable touch.gesture-feedback`); the
 `desktop_step` function above triggers it.
 
+**Lock screen keyboard** (`tablet/lock-keyboard`). While the screen is
+locked, Omarchy shows only the lock screen, so KeyboardPOP can't appear there
+and a tablet without its type cover can't unlock. This adds a touch keyboard
+to the lock screen itself: touch anywhere (or tap the keyboard button under
+the password field) and it comes up, with Shift (hold for caps lock), a
+numbers and symbols page, Delete (hold to repeat), and Unlock; typing on a
+hardware keyboard puts it away. Install it with:
+
+```sh
+tablet/lock-keyboard/install            # tablet/lock-keyboard/install --remove to undo
+```
+
+It clones the machine's own Omarchy lock screen and patches its view, so
+password checking and fingerprint unlock stay exactly as Omarchy ships them,
+and Omarchy's lock fixes still arrive. If an Omarchy update changes the lock
+view so the patch no longer fits, the installer changes nothing and leaves
+the stock lock screen.
+
 ### Face unlock (Surface Go 2)
 
 `faceunlock` unlocks with your face using the IR camera, like Windows

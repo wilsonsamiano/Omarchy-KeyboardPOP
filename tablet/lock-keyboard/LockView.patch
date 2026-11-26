@@ -1,0 +1,108 @@
+--- a/LockView.qml	2026-11-25 22:23:43.467252542 -0700
++++ b/LockView.qml	2026-11-25 22:23:43.468089687 -0700
+@@ -19,6 +19,30 @@
+   property bool loadBackground: true
+   property string passwordText: ""
+   property bool syncingPasswordText: false
++  // The touch keyboard (LockKeyboard.qml): shown when the screen is
++  // touched or the keyboard button is tapped, hidden when a hardware key is
++  // typed.
++  property bool touchKeyboardVisible: false
++
++  function typeFromTouch(text) {
++    if (!root.inputEnabled || root.authenticatingPassword) return
++    root.wakeRequested()
++    if (root.failureMessage.length > 0) root.clearFailureRequested()
++    root.passwordTextEdited(root.passwordText + text)
++  }
++
++  function backspaceFromTouch() {
++    if (!root.inputEnabled || root.authenticatingPassword) return
++    root.wakeRequested()
++    root.passwordTextEdited(root.passwordText.slice(0, -1))
++  }
++
++  function submitFromTouch() {
++    if (!root.inputEnabled || root.authenticatingPassword) return
++    var submitted = root.passwordText
++    root.passwordTextEdited("")
++    if (submitted.length > 0) root.submitPassword(submitted)
++  }
+ 
+   readonly property string placeholderText: Commons.I18n.t("lock.enterPassword")
+   readonly property int fieldWidth: 381
+@@ -137,6 +161,15 @@
+       hoverEnabled: true
+       onClicked: { root.wakeRequested(); root.forcePasswordFocus() }
+       onPositionChanged: root.wakeRequested()
++
++      // A finger anywhere on the lock brings up the touch keyboard; the
++      // mouse doesn't. A handler sees the touch before the MouseArea and
++      // doesn't take it away.
++      TapHandler {
++        acceptedDevices: PointerDevice.TouchScreen
++        grabPermissions: PointerHandler.ApprovesTakeOverByAnything
++        onTapped: { root.wakeRequested(); root.touchKeyboardVisible = true; root.forcePasswordFocus() }
++      }
+     }
+ 
+     BorderSurface {
+@@ -196,6 +229,8 @@
+ 
+         Keys.onPressed: function(event) {
+           root.wakeRequested()
++          // A hardware keyboard is being used: put the touch one away.
++          root.touchKeyboardVisible = false
+           if (event.isAutoRepeat && root.dropsAutoRepeat(event.key)) {
+             event.accepted = true
+             return
+@@ -260,5 +295,49 @@
+       font.italic: true
+       horizontalAlignment: Text.AlignHCenter
+     }
++
++    // Opens the touch keyboard, for when the screen was woken without a
++    // touch (lid opened, key pressed).
++    Rectangle {
++      id: keyboardButton
++      objectName: "touchKeyboardButton"
++      visible: !root.touchKeyboardVisible
++      anchors.top: inputField.bottom
++      anchors.topMargin: root.fingerprintConfigured && root.fingerprintUnavailable ? 64 : 24
++      anchors.horizontalCenter: inputField.horizontalCenter
++      width: 64
++      height: 64
++      radius: 32
++      color: keyboardTap.pressed ? Util.alpha(Commons.Color.lock.text, 0.3) : Util.alpha(Commons.Color.lock.background, 0.7)
++      border.width: 1
++      border.color: Util.alpha(Commons.Color.lock.text, 0.25)
++      Text {
++        anchors.centerIn: parent
++        textFormat: Text.PlainText
++        text: "󰌌"
++        color: Commons.Color.lock.text
++        font.family: Style.font.family
++        font.pixelSize: 28
++      }
++      TapHandler {
++        id: keyboardTap
++        onTapped: { root.wakeRequested(); root.touchKeyboardVisible = true; root.forcePasswordFocus() }
++      }
++    }
++
++    LockKeyboard {
++      objectName: "touchKeyboard"
++      visible: root.touchKeyboardVisible
++      enabled: root.inputEnabled && !root.authenticatingPassword
++      anchors.bottom: parent.bottom
++      anchors.bottomMargin: 24
++      anchors.horizontalCenter: parent.horizontalCenter
++      width: Math.min(parent.width - 32, 860)
++      height: implicitHeight
++      onTyped: function(text) { root.typeFromTouch(text) }
++      onBackspace: root.backspaceFromTouch()
++      onEnter: root.submitFromTouch()
++      onHideRequested: root.touchKeyboardVisible = false
++    }
+   }
+ }

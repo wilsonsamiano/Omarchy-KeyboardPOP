@@ -1,0 +1,61 @@
+#!/bin/bash
+# Adds a touch keyboard to Omarchy's lock screen.
+#
+# While the session is locked, the compositor shows only the lock screen, so
+# KeyboardPOP (or any on-screen keyboard app) can't appear there and a tablet
+# with no type cover can't unlock. This clones this machine's own Omarchy lock
+# screen (`omarchy plugin clone omarchy.lock`, which keeps its permission to
+# check passwords) and adds LockKeyboard.qml to its view. Password checking
+# and fingerprint code are left exactly as Omarchy ships them.
+#
+# It patches the lock screen Omarchy has now rather than shipping a copy, so
+# Omarchy's own lock fixes still arrive with each clone. If Omarchy changed
+# the lock view so the patch no longer fits, nothing is changed: the clone is
+# removed and the stock lock screen stays.
+#
+#   tablet/lock-keyboard/install            add it
+#   tablet/lock-keyboard/install --remove   go back to Omarchy's lock screen
+#
+# Touch anywhere on the lock screen (or tap the keyboard button under the
+# password field) to bring the keyboard up; typing on a hardware keyboard
+# puts it away.
+
+set -euo pipefail
+
+here=$(cd "$(dirname "$0")" && pwd)
+plugins="${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/plugins"
+id="${USER:-$(id -un)}.lock"
+target="$plugins/$id"
+
+fail() { echo "lock-keyboard: $*" >&2; exit 1; }
+
+command -v omarchy >/dev/null || fail "this needs Omarchy"
+command -v patch >/dev/null || fail "this needs patch (sudo pacman -S patch)"
+
+if [[ ${1:-} == --remove ]]; then
+  [[ -e $target ]] || fail "no $id lock screen to remove"
+  omarchy plugin remove "$id" --yes
+  omarchy restart shell >/dev/null 2>&1 || true
+  echo "Back to Omarchy's lock screen."
+  exit 0
+fi
+
+if [[ -e $target ]]; then
+  [[ -f $target/LockKeyboard.qml ]] && { echo "The lock screen keyboard is already installed ($target)."; exit 0; }
+  fail "$target already exists (a lock screen clone of your own). Remove it first: omarchy plugin remove $id"
+fi
+
+omarchy plugin clone omarchy.lock >/dev/null
+[[ -f $target/LockView.qml ]] || fail "omarchy plugin clone did not create $target"
+
+if ! patch --dry-run --quiet -d "$target" -p1 < "$here/LockView.patch" >/dev/null; then
+  omarchy plugin remove "$id" --yes >/dev/null
+  fail "Omarchy's lock screen has changed and the keyboard no longer fits it; nothing was changed. Please report this."
+fi
+patch --quiet -d "$target" -p1 < "$here/LockView.patch"
+install -m644 "$here/LockKeyboard.qml" "$target/LockKeyboard.qml"
+
+# The shell keeps the lock view it loaded; restart it to use the new one.
+omarchy restart shell >/dev/null 2>&1 || true
+echo "Added the touch keyboard to the lock screen ($id)."
+echo "Try it: lock with 'omarchy system lock' while the type cover is attached, then touch the screen."
